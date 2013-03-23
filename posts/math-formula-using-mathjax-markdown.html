@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>MgaMPKAy's - MathJax+Markdown写数学公式</title>
+    <link rel="stylesheet" type="text/css" href="../css/default.css" />
+  </head>
+  <body>
+    <div id="header">
+      <div id="logo">
+        <a href="../">MgaMPKAy's Blog</a>
+      </div>
+      <div id="navigation">
+        <a href="../">Home</a>
+        <a href="../about.html">About</a>
+        <a href="../archive.html">Archive</a>
+      </div>
+    </div>
+
+    <div id="content">
+      <h1>MathJax+Markdown写数学公式</h1>
+
+      <article>
+  <div class="info">March 23, 2013</div>
+
+  <section>
+    <h1 id="step-1.-设置pandoc">Step 1. 设置pandoc</h1>
+<p>首先要设置pandoc，让它正确处理公式。</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">pandocOptions ::</span> <span class="dt">WriterOptions</span>
+pandocOptions <span class="fu">=</span> defaultHakyllWriterOptions
+    { writerHTMLMathMethod <span class="fu">=</span> <span class="dt">MathJax</span> <span class="st">&quot;&quot;</span>
+    }</code></pre>
+<p><code>MathJax &quot;&quot;</code> 表示用MathJax显示公式，空字符串表示MathJax.js的URL，这里不用设置(设置了也没用，所以才有后面的步骤)。这个设置主要是为了让pandoc正确工作。</p>
+<p>用 <code>pandocCompilerWith</code> 使用上面的设置。</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell">match <span class="st">&quot;posts/*&quot;</span> <span class="fu">$</span> <span class="kw">do</span>
+    route <span class="fu">$</span> setExtension <span class="st">&quot;html&quot;</span>
+    compile <span class="fu">$</span> pandocCompilerWith defaultHakyllReaderOptions pandocOptions</code></pre>
+<h1 id="step-2.-加载mathjax">Step 2. 加载MathJax</h1>
+<p>可以在模板里直接写个script标签来加载MathJax，但不是每个页面都有公式，这样就会有不必要的加载。所以我们可以加个metadata来决定是否加载。</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell">
+<span class="ot">mathJaxContext ::</span> <span class="dt">Context</span> <span class="dt">String</span>
+mathJaxContext <span class="fu">=</span> field <span class="st">&quot;mathjax&quot;</span> <span class="fu">$</span> \item <span class="ot">-&gt;</span> <span class="kw">do</span>
+    metadata <span class="ot">&lt;-</span> getMetadata (itemIdentifier item)
+    <span class="kw">case</span> M.lookup <span class="st">&quot;mathjax&quot;</span> metadata <span class="kw">of</span>
+      <span class="kw">Nothing</span> <span class="ot">-&gt;</span> <span class="fu">return</span> <span class="st">&quot;&quot;</span>
+      <span class="kw">Just</span> _  <span class="ot">-&gt;</span> <span class="fu">return</span> <span class="st">&quot;&lt;script type=\&quot;text/javascript\&quot;\</span>
+<span class="st">                        \src=\&quot;http://cdn.mathjax.org/mathjax/latest/\</span>
+<span class="st">			\MathJax.js?config=TeX-AMS-MML_HTMLorMML\&quot;&gt;\</span>
+<span class="st">			\&lt;/script&gt;&quot;</span></code></pre>
+<p>然后在模板里加入 <code>$mathjax$</code>。 如果metadata里有 <code>mathjax</code> 这个键，就把模板里的 <code>$mathjax$</code> 换成script标签。</p>
+<h1 id="step-3.-write-your-math-formula">Step 3. Write your math formula</h1>
+<p>这要在metadata部分加个mathjax: xxx就可以了，xxx是什么都没关系，因为我们只想要mathjax这个键。</p>
+<pre><code>---
+title: 一堆数学公式
+mathjax: on
+---
+
+$pi = 3.1415926..$</code></pre>
+  </section>
+
+  <section id="comment">
+    <br />
+    <hr />
+    <div id="disqus_thread"></div>
+    <script type="text/javascript">
+      /* * * CONFIGURATION VARIABLES: EDIT BEFORE PASTING INTO YOUR WEBPAGE * * */
+      var disqus_shortname = 'mgampkay'; // required: replace example with your forum shortname
+
+      /* * * DON'T EDIT BELOW THIS LINE * * */
+      (function() {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+      })();
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+    <a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+  </section>
+
+</article>
+
+<script type="text/javascript" src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
+<script type="text/javascript">
+$(document).ready(function() {
+    // Add extra information to code blocks
+    $('code').each(function(){
+    	var title = $(this).attr("class");
+            if(title != '' && title !== undefined){
+                if(title.match('sourceCode')){
+                    var title = title.split(' ')[1];
+                };
+		$(this).before('<span class="language">'+title+'</span>');
+            }
+    });
+});
+</script>
+
+
+    </div>
+    <div id="footer">
+      @mgampkay
+    </div>
+  </body>
+</html>
