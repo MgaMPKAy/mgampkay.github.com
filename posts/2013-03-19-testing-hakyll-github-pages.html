@@ -24,8 +24,46 @@
   <div class="info">March 19, 2013</div>
 
   <section>
-    <p>如题。</p>
-<p>来点Haskell代码:</p>
+    <h1 id="代码">代码</h1>
+<p>~~~ 和 ~~~ 间插入代码块:</p>
+<pre><code>~~~ {.haskell}
+main = fix error
+~~~</code></pre>
+<p>得到:</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell">main <span class="fu">=</span> fix <span class="fu">error</span></code></pre>
+<p>可以加行数:</p>
+<pre><code>~~~ {.c .numberLines}
+int main()
+{
+    printf(&quot;Hello, World!&quot;);
+    main();
+}
+~~~</code></pre>
+<p>效果:</p>
+<table class="sourceCode c numberLines"><tr class="sourceCode"><td class="lineNumbers"><pre>1
+2
+3
+4
+5
+</pre></td><td class="sourceCode"><pre><code class="sourceCode c"><span class="dt">int</span> main()
+{
+    printf(<span class="st">&quot;Hello, World!&quot;</span>);
+    main();
+}</code></pre></td></tr></table>
+<p>(代码里混用Tab和空格缩进会很麻烦, 代码框变小了是CSS没弄好)</p>
+<h1 id="数学公式">数学公式</h1>
+<p>$和$之间得内容会被当作 <span class="math">\(\TeX\)</span> 数学公式:</p>
+<pre><code>$\pi = 3.1415926...$</code></pre>
+<p>得到</p>
+<p><span class="math">\(\pi = 3.1415926...\)</span></p>
+<p>夸行没问题:</p>
+<pre><code>$\begin{align}
+P(Y, E = e) &amp; = {1 \over Z} * {\prod \phi^\prime_k(D^\prime_k)} \\
+            &amp; \propto \prod{k}\phi^\prime_k(D^\prime_k) \\
+\end{align}$</code></pre>
+<p><span class="math">\(\begin{align} P(Y, E = e) &amp; = {1 \over Z} * {\prod \phi^\prime_k(D^\prime_k)} \\ &amp; \propto \prod{k}\phi^\prime_k(D^\prime_k) \\ \end{align}\)</span></p>
+<p>这是什么啊?</p>
+<p>最后来点Haskell代码:</p>
 <pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">module</span> <span class="dt">Knight</span> <span class="kw">where</span>
 
 <span class="kw">import</span> Control.Monad.Writer
@@ -45,28 +83,6 @@ paths from to step ps
         <span class="kw">in</span> <span class="fu">mapM_</span> (\f <span class="ot">-&gt;</span> paths f to (step <span class="fu">-</span> <span class="dv">1</span>) (f<span class="fu">:</span>ps)) possibleSteps
 
 result from to step <span class="fu">=</span> runWriter (paths from to step [from])</code></pre>
-<p>来点Shell script:</p>
-<pre class="sourceCode bash"><code class="sourceCode bash"><span class="co">#!/bin/bash</span>
-
-<span class="ot">Cmd=$1</span>
-<span class="ot">Target=$2</span>
-
-<span class="ot">ConfigPath=</span>/tmp
-<span class="ot">SetupPath=</span>~/setup
-
-<span class="co"># set up ArchiveFileName</span>
-<span class="kw">case</span> <span class="st">&quot;</span><span class="ot">$Target</span><span class="st">&quot;</span><span class="kw"> in</span>
-    <span class="st">&quot;chromium&quot;</span> <span class="kw">)</span>
-	<span class="ot">ArchiveFileName=</span>chromium.tar.gz
-	<span class="kw">;;</span>
-    <span class="st">&quot;emacs&quot;</span> <span class="kw">)</span>
-	<span class="ot">ArchiveFileName=</span>emacs.d.tar.gz
-	<span class="kw">;;</span>
-    * <span class="kw">)</span>
-	<span class="kw">exit</span> 1
-	<span class="kw">;;</span>
-<span class="kw">esac</span>
-<span class="ot">ArchiveFilePath=$SetupPath</span>/<span class="ot">$ArchiveFileName</span></code></pre>
   </section>
 
   <section id="comment">
@@ -105,7 +121,7 @@ $(document).ready(function() {
     });
 });
 </script>
-
+<script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
 
     </div>
     <div id="footer">
