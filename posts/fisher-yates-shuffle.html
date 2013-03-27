@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>MgaMPKAy's - Fisher–Yates shuffle 算法</title>
+    <link rel="stylesheet" type="text/css" href="../css/default.css" />
+  </head>
+  <body>
+    <div id="header">
+      <div id="logo">
+        <a href="../">MgaMPKAy's Blog</a>
+      </div>
+      <div id="navigation">
+        <a href="../">Home</a>
+        <a href="../about.html">About</a>
+        <a href="../archive.html">Archive</a>
+      </div>
+    </div>
+
+    <div id="content">
+      <h1>Fisher–Yates shuffle 算法</h1>
+
+      <article>
+  <div class="info">March 27, 2013</div>
+
+  <section>
+    <p>Fisher–Yates shuffle算法是一个经典的随机洗牌算法，而且非常简洁。</p>
+<p>自己用Haskell实现了一个:</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">module</span> <span class="dt">Shuffle</span> <span class="kw">where</span>
+
+<span class="kw">import</span> System.Random
+<span class="kw">import</span> Data.Array
+<span class="kw">import</span> Data.List (mapAccumL)
+
+<span class="ot">shuffle ::</span> <span class="dt">StdGen</span> <span class="ot">-&gt;</span> <span class="dt">Array</span> <span class="dt">Int</span> a <span class="ot">-&gt;</span> <span class="dt">Array</span> <span class="dt">Int</span> a
+shuffle stdgen arr <span class="fu">=</span> <span class="fu">foldl</span> swap arr swaps
+  <span class="kw">where</span>
+    (l, r) <span class="fu">=</span> bounds arr
+    swaps  <span class="fu">=</span> <span class="fu">snd</span> <span class="fu">$</span> mapAccumL go stdgen [r, r <span class="fu">-</span> <span class="dv">1</span> <span class="fu">..</span> l <span class="fu">+</span> <span class="dv">1</span>]
+    go g i <span class="fu">=</span> <span class="kw">let</span> (j, g') <span class="fu">=</span> randomR (l, i) g <span class="kw">in</span> (g' , (i, j))
+
+<span class="ot">swap ::</span> <span class="kw">Ix</span> i <span class="ot">=&gt;</span> <span class="dt">Array</span> i e <span class="ot">-&gt;</span> (i, i) <span class="ot">-&gt;</span> <span class="dt">Array</span> i e
+swap arr (i, j) <span class="fu">=</span>
+    <span class="kw">let</span> ai <span class="fu">=</span> arr <span class="fu">!</span> i
+        aj <span class="fu">=</span> arr <span class="fu">!</span> j
+    <span class="kw">in</span> arr <span class="fu">//</span> [(i, aj), (j, ai)]</code></pre>
+<p>先生成交换序列，然后交换。</p>
+<p>为什么一定要从后往前排呢, 用 <code>[l + 1 .. r]</code>, 递增不是更好吗? (随机数的范围要改成<code>(i, r)</code>)。 我觉得多半是因为 <code>while (i--)</code>要比 <code>while (i++ &lt; r)</code>和for循环要好看, 而且性能一样(如果INC和DEC一样, 所有条件跳转一样)。</p>
+<p>测试的时候发现Hugs经常出这个错误:<code>Program error: undefined array element</code>，GHC倒没出现过问题。 然后看了好久好久，确定没有越界啊，用<code>Debug.Trace.trace</code>才发现，GHC和Hugs的生成随机数是一样的，但是Hugs会在原地交换的时候就会出错。 更准确的说，Hugs的<code>//</code>一次不能修改同一下标的值多次。</p>
+<pre><code>Main&gt; array (0,0) [(0,0)] // [(0,0), (0,1::Int)]
+array (0,0) [(0,
+Program error: undefined array element
+
+Main&gt; array (0,0) [(0,0)] // [(0,1::Int)]
+array (0,0) [(0,1)]
+
+Main&gt; array (0,0) [(0,0)] // [(0,0)] // [(0, 1::Int)]
+array (0,0) [(0,1)]</code></pre>
+  </section>
+
+  <section id="comment">
+    <br />
+    <hr />
+    <div id="disqus_thread"></div>
+    <script type="text/javascript">
+      /* * * CONFIGURATION VARIABLES: EDIT BEFORE PASTING INTO YOUR WEBPAGE * * */
+      var disqus_shortname = 'mgampkay'; // required: replace example with your forum shortname
+
+      /* * * DON'T EDIT BELOW THIS LINE * * */
+      (function() {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+      })();
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+    <a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+  </section>
+
+</article>
+
+<script type="text/javascript" src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
+<script type="text/javascript">
+$(document).ready(function() {
+    // Add extra information to code blocks
+    $('code').each(function(){
+    	var title = $(this).attr("class");
+            if(title != '' && title !== undefined){
+                if(title.match('sourceCode')){
+                    var title = title.split(' ')[1];
+                };
+		$(this).before('<span class="language">'+title+'</span>');
+            }
+    });
+});
+</script>
+
+
+    </div>
+    <div id="footer">
+      @mgampkay
+    </div>
+  </body>
+</html>
