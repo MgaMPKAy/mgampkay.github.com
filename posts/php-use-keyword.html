@@ -25,27 +25,27 @@
 
   <section>
     <p>今天试了一下Slim框架，准备弄个编辑器，第一次遇到<code>use</code>关键字。</p>
-<p>Slim的路由由路径+匿名函数组成, 例如这样：</p>
+<p>Slim的路由通常由路径+匿名函数组成, 例如这样：</p>
 <pre class="sourceCode php"><code class="sourceCode php"><span class="kw">&lt;?php</span>
 
 <span class="kw">$app</span>-&gt;get<span class="ot">(</span><span class="st">&quot;/path/:arg&quot;</span><span class="ot">,</span> <span class="kw">function</span><span class="ot">(</span><span class="kw">$arg</span><span class="ot">)</span> {
    <span class="st">...</span>
 }<span class="ot">);</span></code></pre>
-<p>怎样把$app传进路由里的匿名函数呢？</p>
+<p>怎样把<code>$app</code>传进路由里的匿名函数呢？</p>
 <p>以前的我会用<code>global</code>:</p>
 <pre class="sourceCode php"><code class="sourceCode php">$app-&gt;get(&quot;/path/:arg&quot;, function($arg) {
     global $app;
     ...
 });</code></pre>
-<p>如果遇到不是全局的变量，global就无能为力了。</p>
-<p>现在，我知道了use:</p>
+<p>如果遇到不是全局的变量，<code>global</code>就无能为力了。</p>
+<p>现在，我知道了<code>use</code>:</p>
 <pre class="sourceCode php"><code class="sourceCode php">$app-&gt;get(&quot;/path/:arg&quot;, function($arg) use ($app) {
     ...
 });</code></pre>
-<p>哦，PHP的匿名函数是不会自动捕获自由变量的，所以才要用use来传递，这突然就让我想起C++里的lambda开头的那个[]。</p>
+<p>哦，PHP的匿名函数是不会自动捕获自由变量的，所以才要用<code>use</code>来传递从而实现闭包，这突然就让我想起C++里的lambda开头的那个[]。</p>
 <p>例如Haskell里就会自动捕捉：</p>
 <pre class="sourceCode haskell"><code class="sourceCode haskell">mkCounter <span class="fu">=</span> <span class="kw">do</span>
-   counterRef <span class="fu">&lt;=</span> newIORef (<span class="dv">0</span><span class="ot">::</span><span class="dt">Int</span>)
+   counterRef <span class="ot">&lt;-</span> newIORef (<span class="dv">0</span><span class="ot">::</span><span class="dt">Int</span>)
    <span class="fu">return</span> <span class="fu">$</span> mofidyIORef counterRef (<span class="fu">+</span><span class="dv">1</span>) <span class="fu">&gt;&gt;</span> readIORef counterRef <span class="fu">&gt;&gt;=</span> <span class="fu">print</span></code></pre>
 <p>到了PHP就要自己选择：</p>
 <pre class="sourceCode php"><code class="sourceCode php">function mkCounter() {
