@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>MgaMPKAy's - Haskell入门</title>
+    <link rel="stylesheet" type="text/css" href="../css/default.css" />
+  </head>
+  <body>
+    <div id="header">
+      <div id="logo">
+        <a href="../">MgaMPKAy's Blog</a>
+      </div>
+      <div id="navigation">
+        <a href="../">Home</a>
+        <a href="../about.html">About</a>
+        <a href="../archive.html">Archive</a>
+      </div>
+    </div>
+
+    <div id="content">
+      <h1>Haskell入门</h1>
+
+      <article>
+  <div class="info">April  4, 2013</div>
+
+  <section>
+    <p>Haskell 是一很有趣的语言，废话少说，看完你就知道了。</p>
+<h1 id="布尔类型">布尔类型</h1>
+<p>一个布尔类型的值可以为真或假，在Haskell可以这样定义：</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="kw">True</span>
+<span class="kw">data</span> <span class="kw">False</span></code></pre>
+<p><code>data</code>关键字用于定义数据类型。我们用<code>True</code>表示真，用<code>False</code>表示假。</p>
+<h1 id="自然数">自然数</h1>
+<p>我们可以这样定义自然数：</p>
+<ul>
+<li><code>0</code> 是自然数</li>
+<li>如果<code>x</code>是自然数，<code>x</code>的后继也是自然数</li>
+</ul>
+<p>根据这个定义，我们在Haskell可以这样：</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">Zero</span>
+<span class="kw">data</span> <span class="dt">Succ</span> a</code></pre>
+<p><code>Zero</code>表示<code>0</code>, <code>Succ a</code>表示<code>a</code>的后继，这里<code>a</code>是个变量，表示任意值。有了这两个定义，我们就可以表示所有的自然数：</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">type</span> <span class="dt">One</span>   <span class="fu">=</span> <span class="dt">Succ</span> <span class="dt">Zero</span>
+<span class="kw">type</span> <span class="dt">Two</span>   <span class="fu">=</span> <span class="dt">Succ</span> <span class="dt">One</span>
+<span class="kw">type</span> <span class="dt">Three</span> <span class="fu">=</span> <span class="dt">Succ</span> <span class="dt">Three</span>
+<span class="fu">...</span></code></pre>
+<h1 id="相等">相等？</h1>
+<p>首先我们定义相等比较：</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">class</span> <span class="dt">IEqual</span> a b <span class="kw">where</span>
+    <span class="kw">type</span> <span class="dt">Equal</span> a<span class="ot"> b ::</span> <span class="fu">*</span></code></pre>
+<p>这里用<code>class</code>定义了一个接口<code>IEqual</code>，这个接口只有一个方法<code>Equal</code>，Equal接受两个参数（a和b），并返回一个值。</p>
+<p>我们可以比较两个自然数是否相等：</p>
+<ul>
+<li><code>0</code>和<code>0</code>相等</li>
+<li><code>0</code>和任意<code>x的后继</code>不相等</li>
+<li><code>x的后继</code>和<code>y的后继</code>相等，当且仅当<code>x</code>和<code>y</code>相等</li>
+</ul>
+<p>我们可以通过<code>instance</code>实现这个一个接口，把上面比较方法翻译到Haskell：</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- 0和0相等</span>
+<span class="kw">instance</span> <span class="dt">IEqual</span> <span class="dt">Zero</span> <span class="dt">Zero</span> <span class="kw">where</span>
+    <span class="kw">type</span> <span class="dt">Equal</span> <span class="dt">Zero</span> <span class="dt">Zero</span> <span class="fu">=</span> <span class="kw">True</span>
+
+<span class="co">-- 任意x的后继和0不相等</span>
+<span class="kw">instance</span> <span class="dt">IEqual</span> (<span class="dt">Succ</span> x) <span class="dt">Zero</span> <span class="kw">where</span>
+    <span class="kw">type</span> <span class="dt">Equal</span> (<span class="dt">Succ</span> x) <span class="dt">Zero</span> <span class="fu">=</span> <span class="kw">False</span>
+
+<span class="co">-- 0和任意x的后继不相等</span>
+<span class="kw">instance</span> <span class="dt">IEqual</span> <span class="dt">Zero</span> (<span class="dt">Succ</span> x) <span class="kw">where</span>
+    <span class="kw">type</span> <span class="dt">Equal</span> <span class="dt">Zero</span> (<span class="dt">Succ</span> x) <span class="fu">=</span> <span class="kw">False</span>
+
+<span class="co">-- x的后继和y的后继相等，当且仅当x和y相等</span>
+<span class="kw">instance</span> <span class="dt">IEqual</span> (<span class="dt">Succ</span> x) (<span class="dt">Succ</span> y) <span class="kw">where</span>
+    <span class="kw">type</span> <span class="dt">Equal</span> (<span class="dt">Succ</span> x) (<span class="dt">Succ</span> y) <span class="fu">=</span> <span class="dt">Equal</span> x y</code></pre>
+<p>我们可以在<code>ghci</code>测试一下：</p>
+<pre><code>ghci&gt; :t undefined:: Equal Three Three
+undefined:: Equal Three Three :: True
+
+ghci&gt; :t undefined:: Equal Three Two
+undefined:: Equal Three Two :: False</code></pre>
+<p><code>:t</code>表示求值，<code>undefined ::</code>后跟要取值的表达式。上面是说对<code>Equal Three Three</code>求值得到<code>True</code>，对<code>Equak Three Two</code>求值得到<code>False</code>。</p>
+<p>Haskell还会阻止你定义矛盾的实例。</p>
+<p>假设你定义了<code>Zero</code>和任意数相等（当然这是不对的），然后再定义<code>Zeero</code>和任意<code>Succ a</code>不相等:</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">instance</span> <span class="dt">IEqual</span> <span class="dt">Zero</span> a <span class="kw">where</span>
+    <span class="kw">type</span> <span class="dt">Equal</span> <span class="dt">Zero</span> a <span class="fu">=</span> <span class="kw">True</span>
+
+<span class="kw">instance</span> <span class="dt">IEqual</span> a <span class="dt">Zero</span> <span class="kw">where</span>
+    <span class="kw">type</span> <span class="dt">Equal</span> a <span class="dt">Zero</span> <span class="fu">=</span> <span class="kw">True</span>
+
+<span class="kw">instance</span> <span class="dt">IEqual</span> <span class="dt">Zero</span> (<span class="dt">Succ</span> a) <span class="kw">where</span>
+    <span class="kw">type</span> <span class="dt">Equal</span> <span class="dt">Zero</span> (<span class="dt">Succ</span> a) <span class="fu">=</span> <span class="kw">False</span>
+
+<span class="kw">instance</span> <span class="dt">IEqual</span> (<span class="dt">Succ</span> a) <span class="dt">Zero</span> <span class="kw">where</span>
+    <span class="kw">type</span> <span class="dt">Equal</span> (<span class="dt">Succ</span> a) <span class="dt">Zero</span> <span class="fu">=</span> <span class="kw">False</span></code></pre>
+<p>Haskell会提示你实例1、3是矛盾的，实例2、4是矛盾的。</p>
+<p>练习：</p>
+<ol style="list-style-type: decimal">
+<li>定义小于、大于操作（可以向IEqual接口添加方法，或者定义新的接口）</li>
+<li>定义加法、乘法、减法运算</li>
+</ol>
+<p>答案之一小于关系（因为还后面用到）：</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">class</span> <span class="dt">ILessThen</span> a b <span class="kw">where</span>
+    <span class="kw">type</span> <span class="dt">LessThen</span> a<span class="ot"> b ::</span> <span class="fu">*</span>
+
+<span class="kw">instance</span> <span class="dt">ILessThen</span> <span class="dt">Zero</span> <span class="dt">Zero</span> <span class="kw">where</span>
+    <span class="kw">type</span> <span class="dt">LessThen</span> <span class="dt">Zero</span> <span class="dt">Zero</span> <span class="fu">=</span> <span class="kw">False</span>
+
+<span class="kw">instance</span> <span class="dt">ILessThen</span> <span class="dt">Zero</span> (<span class="dt">Succ</span> a) <span class="kw">where</span>
+    <span class="kw">type</span> <span class="dt">LessThen</span> <span class="dt">Zero</span> (<span class="dt">Succ</span> a) <span class="fu">=</span> <span class="kw">True</span>
+
+<span class="kw">instance</span> <span class="dt">ILessThen</span> (<span class="dt">Succ</span> a) <span class="dt">Zero</span> <span class="kw">where</span>
+    <span class="kw">type</span> <span class="dt">LessThen</span> (<span class="dt">Succ</span> a) <span class="dt">Zero</span> <span class="fu">=</span> <span class="kw">False</span>
+
+<span class="kw">instance</span> <span class="dt">ILessThen</span> (<span class="dt">Succ</span> a) (<span class="dt">Succ</span> b) <span class="kw">where</span>
+    <span class="kw">type</span> <span class="dt">LessThen</span> (<span class="dt">Succ</span> a) (<span class="dt">Succ</span> b) <span class="fu">=</span> <span class="dt">LessThen</span> a b</code></pre>
+<h1 id="列表">列表</h1>
+<p>我们这样定义列表：</p>
+<ul>
+<li>空列表是列表</li>
+<li>一个列表前加上一个元素得到的也是个列表</li>
+</ul>
+<p>翻译到Haskell：</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- 空列表</span>
+<span class="kw">data</span> <span class="dt">Nil</span>
+
+<span class="co">-- 一个元素h和另一个列表t的组合</span>
+<span class="kw">data</span> <span class="dt">Cons</span> h t</code></pre>
+<p>例子：</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- [1, 2, 3]</span>
+<span class="kw">type</span> <span class="dt">List1</span> <span class="fu">=</span> <span class="dt">Cons</span> (<span class="dt">One</span> (<span class="dt">Cons</span> <span class="dt">Two</span> (<span class="dt">Cons</span> <span class="dt">Three</span> <span class="dt">Nil</span>)))
+
+<span class="co">-- [1, 1, 2, 3]</span>
+<span class="kw">type</span> <span class="dt">List2</span> <span class="fu">=</span> <span class="dt">Cons</span> <span class="dt">Three</span> <span class="dt">List1</span></code></pre>
+<h1 id="插入">插入</h1>
+<p>下面要把一个元素插入到有序列表：</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">class</span> <span class="dt">IInsert</span> a b <span class="kw">where</span>
+    <span class="kw">type</span> <span class="dt">Insert</span> a<span class="ot"> b ::</span> <span class="fu">*</span></code></pre>
+<p>把一个元素插入到空列表：</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">instance</span> <span class="dt">IInsert</span> x <span class="dt">Nil</span> <span class="kw">where</span>
+    <span class="kw">type</span> <span class="dt">Insert</span> x <span class="dt">Nil</span> <span class="fu">=</span> <span class="dt">Cons</span> x <span class="dt">Nil</span></code></pre>
+<p>处理非空列表时要根据大小比较选择相应的操作，我们可以增加一个布尔值作为参数，定义对非空列表的插入：</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">class</span> <span class="dt">IInsertCons</span> b x y ys <span class="kw">where</span>
+    <span class="kw">type</span> <span class="dt">InsertCons</span> b x y<span class="ot"> ys ::</span> <span class="fu">*</span></code></pre>
+<p><code>x</code>表示新元素，<code>y</code>表示原列表的头节点，<code>ys</code>表示原列表的尾，<code>b</code>是表示<code>x</code>是否小于<code>y</code>的布尔值。根据这个我们就可以实现对非空列表的插入：</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">instance</span> <span class="dt">IInsertCons</span> <span class="kw">True</span> x y ys <span class="kw">where</span>
+    <span class="kw">type</span> <span class="dt">InsertCons</span> <span class="kw">True</span> x y ys <span class="fu">=</span> <span class="dt">Cons</span> x (<span class="dt">Cons</span> y ys)
+
+<span class="kw">instance</span> <span class="dt">IInsertCons</span> <span class="kw">False</span> x y ys <span class="kw">where</span>
+    <span class="kw">type</span> <span class="dt">InsertCons</span> <span class="kw">False</span> x y ys <span class="fu">=</span> <span class="dt">Cons</span> y (<span class="dt">Insert</span> x ys)
+
+<span class="kw">instance</span> <span class="dt">IInsert</span> x (<span class="dt">Cons</span> y ys) <span class="kw">where</span>
+    <span class="kw">type</span> <span class="dt">Insert</span> x (<span class="dt">Cons</span> y ys) <span class="fu">=</span> <span class="dt">InsertCons</span> (<span class="dt">LessThen</span> x y) x y ys</code></pre>
+<p>赶紧到<code>ghci</code>中测试一下：</p>
+<pre><code>ghci&gt; :t undefined :: Insert One Nil
+undefined :: Insert One Nil :: Cons (Succ Zero) Nil
+
+ghci&gt; :t undefined :: Insert Two (Cons One (Cons Three Nil))
+undefined :: Insert Two (Cons One (Cons Three Nil))
+  :: Cons (Succ Zero) (Cons (Succ One) (Cons (Succ Two) Nil))</code></pre>
+<h1 id="完结">完结</h1>
+<p>把type-level programming当Haskell入门想法是从外国一个牛人得到的，时间久了，没找着他。出于入门和完全隐藏value-level的目的，上面很多地方都比较含糊, 到后面就没编下去了。</p>
+<p>例子来自<a href="http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.22.7806">Fun with functional dependencies</a>，我只是改用Type Family实现，没太大差别。Fun with functional dependencies最后的例子插入排序，你可以试一下用TF实现。</p>
+<p>我本来想在愚人节写的，那几天在忙其他事，拖到现在。愚人节写的不一定是假的，上面的例子都是测试过的，所以你大可放心。</p>
+  </section>
+
+  <section id="comment">
+    <br />
+    <hr />
+    <div id="disqus_thread"></div>
+    <script type="text/javascript">
+      /* * * CONFIGURATION VARIABLES: EDIT BEFORE PASTING INTO YOUR WEBPAGE * * */
+      var disqus_shortname = 'mgampkay'; // required: replace example with your forum shortname
+
+      /* * * DON'T EDIT BELOW THIS LINE * * */
+      (function() {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+      })();
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+
+    <a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+  </section>
+
+</article>
+
+<script type="text/javascript" src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
+<script type="text/javascript">
+$(document).ready(function() {
+    // Add extra information to code blocks
+    $('code').each(function(){
+    	var title = $(this).attr("class");
+            if(title != '' && title !== undefined){
+                if(title.match('sourceCode')){
+                    var title = title.split(' ')[1];
+                };
+		$(this).before('<span class="language">'+title+'</span>');
+            }
+    });
+});
+</script>
+<script type="text/javascript">
+
+      var _gaq = _gaq || [];
+      _gaq.push(['_setAccount', 'UA-39766360-1']);
+      _gaq.push(['_trackPageview']);
+
+      (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+      })();
+</script>
+
+
+    </div>
+    <div id="footer">
+      @mgampkay
+    </div>
+  </body>
+</html>
