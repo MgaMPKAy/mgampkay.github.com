@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>MgaMPKAy's - 粗看契约式设计</title>
+    <link rel="stylesheet" type="text/css" href="../css/default.css" />
+  </head>
+  <body>
+    <div id="header">
+      <div id="logo">
+        <a href="../">MgaMPKAy's Blog</a>
+      </div>
+      <div id="navigation">
+        <a href="../">Home</a>
+        <a href="../about.html">About</a>
+        <a href="../archive.html">Archive</a>
+      </div>
+    </div>
+
+    <div id="content">
+      <h1>粗看契约式设计</h1>
+
+      <article>
+  <div class="info">April  6, 2013</div>
+
+  <section>
+    <p>今天看了一点契约式设计（DBC）的介绍，按阅读顺序记录之。</p>
+<h1 id="why-i-do-design-by-contract1">1. <a href="http://mempko.wordpress.com/2013/04/05/why-i-do-design-by-contract/">Why I do Design by Contract</a></h1>
+<p>看完之后，有DBC就是往代码里插<code>assert</code>感觉。当然不能顺便插断言，例如在函数入口插的断言要检查输入（前置条件），在函数出口插的要检查输出（后置条件）。</p>
+<p>和Unit test、TDD的比较：</p>
+<ol style="list-style-type: decimal">
+<li>单元测试和实现代码分离，DBC里契约在实现代码中查（易查看，可以做文档）</li>
+<li>单元测试只能检查预先想到的一小部分输入，DBC可以一直检查（知道遇到错误然后挂掉）</li>
+<li>单元测试注重独立的模块</li>
+</ol>
+<p>和Defensive programming不同，DBC里输入有错就抛异常或直接退出完事，而Defensive则要处理这些错误。当然只是我比较片面的理解。</p>
+<p>实现Fibonacci数列来演示一下（不准确）：</p>
+<p>一般的实现：</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell">fib n
+    <span class="fu">|</span> n <span class="fu">==</span> <span class="dv">1</span> <span class="fu">=</span> <span class="dv">1</span>
+    <span class="fu">|</span> n <span class="fu">==</span> <span class="dv">2</span> <span class="fu">=</span> <span class="dv">1</span>
+    <span class="fu">|</span> <span class="fu">otherwise</span> <span class="fu">=</span> fib (n <span class="fu">-</span> <span class="dv">1</span>) <span class="fu">+</span> fib (n <span class="fu">-</span> <span class="dv">2</span>)</code></pre>
+<p>Defensive的实现，处理非法输入：</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell">fib n
+    <span class="fu">|</span> n <span class="fu">&lt;=</span> <span class="dv">0</span> <span class="fu">=</span> <span class="kw">Nothing</span>
+    <span class="fu">|</span> n <span class="fu">==</span> <span class="dv">1</span> <span class="fu">=</span> <span class="kw">Just</span> <span class="dv">1</span>
+    <span class="fu">|</span> n <span class="fu">==</span> <span class="dv">2</span> <span class="fu">=</span> <span class="kw">Just</span> <span class="dv">1</span>
+    <span class="fu">|</span> <span class="fu">otherwise</span> <span class="fu">=</span> (<span class="fu">+</span>) <span class="fu">&lt;$&gt;</span> fib (n <span class="fu">-</span> <span class="dv">1</span>) <span class="fu">&lt;*&gt;</span> fib (n <span class="fu">-</span> <span class="dv">2</span>)</code></pre>
+<p>DBC的实现，遇到非法输入直接抛异常。</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell">fib n
+    <span class="fu">|</span> assert (n <span class="fu">&gt;</span> <span class="dv">0</span>) <span class="fu">=</span> <span class="fu">error</span> <span class="st">&quot;n must larger than 0&quot;</span>
+    <span class="fu">|</span> n <span class="fu">==</span> <span class="dv">1</span> <span class="fu">=</span> <span class="dv">1</span>
+    <span class="fu">|</span> n <span class="fu">==</span> <span class="dv">2</span> <span class="fu">=</span> <span class="dv">1</span>
+    <span class="fu">|</span> <span class="fu">otherwise</span> <span class="fu">=</span> fib (n <span class="fu">-</span> <span class="dv">1</span>) <span class="fu">+</span> fib (n <span class="fu">-</span> <span class="dv">2</span>)</code></pre>
+<h1 id="d语言的dbc支持">2. D语言的DBC支持</h1>
+<p>接着看来<a href="http://dlang.org/dbc.html" title="Contract Programming">D语言里的DBC</a>。D语言对DBC有语法支持，一个函数可以分成<code>in</code>、<code>out</code>和<code>body</code>部分，分别对应前置条件、后置条件和实际的函数。有了这样的分块后，断言的使用就更加系统。</p>
+<pre class="sourceCode d"><code class="sourceCode d"><span class="dt">void</span> func() {
+  <span class="kw">in </span>{
+    <span class="co">//asserts</span>
+  }
+
+  <span class="kw">out </span>{
+   <span class="co">//aserts</span>
+  }
+
+  <span class="kw">body</span> {
+    <span class="co">// function logic</span>
+  }
+}</code></pre>
+<p>调用一个函数的时候按<code>in -&gt; body -&gt; out</code>的顺序执行，断言也是抛异常。</p>
+<p>类里面可以有<code>invariant()</code>方法，用来检查不变量。</p>
+<h1 id="net">.Net</h1>
+<p>不太认真地看了<a href="http://www.cnblogs.com/lucifer1982/archive/2009/03/21/1418642.html" title=".NET 4.0 中的契约式编程">.Net 4.0的DBC</a>，没有语法支持，也是到处插断言，概念也多。</p>
+<h1 id="liquid-haskell">Liquid Haskell</h1>
+<p>上面各种实现更多是在运行时检查错误，Haskell自然也可以。<a href="http://goto.ucsd.edu/~rjhala/liquid/haskell/blog/blog/2013/01/01/refinement-types-101.lhs/" title="Refinement Types 101">Liquid Haskell</a>实现了在编译时静态检查。使用Liquid Haskell要给Haskell函数写注释，然后用logic solver做验证。虽然这里完全没提到contract，但是前置、后置条件还是有的。准备读点论文再来看。</p>
+  </section>
+
+  <section id="comment">
+    <br />
+    <hr />
+    <div id="disqus_thread"></div>
+    <script type="text/javascript">
+      /* * * CONFIGURATION VARIABLES: EDIT BEFORE PASTING INTO YOUR WEBPAGE * * */
+      var disqus_shortname = 'mgampkay'; // required: replace example with your forum shortname
+
+      /* * * DON'T EDIT BELOW THIS LINE * * */
+      (function() {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+      })();
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+
+    <a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+  </section>
+
+</article>
+
+<script type="text/javascript" src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
+<script type="text/javascript">
+$(document).ready(function() {
+    // Add extra information to code blocks
+    $('code').each(function(){
+    	var title = $(this).attr("class");
+            if(title != '' && title !== undefined){
+                if(title.match('sourceCode')){
+                    var title = title.split(' ')[1];
+                };
+		$(this).before('<span class="language">'+title+'</span>');
+            }
+    });
+});
+</script>
+<script type="text/javascript">
+
+      var _gaq = _gaq || [];
+      _gaq.push(['_setAccount', 'UA-39766360-1']);
+      _gaq.push(['_trackPageview']);
+
+      (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+      })();
+</script>
+
+
+    </div>
+    <div id="footer">
+      @mgampkay
+    </div>
+  </body>
+</html>
