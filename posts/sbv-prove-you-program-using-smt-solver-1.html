@@ -59,7 +59,7 @@ isPermutationOf x (<span class="dt">Ordered</span> ls) <span class="fu">=</span>
 <li>Curry–Howard同构的正确性</li>
 <li>支持依赖类型的语言</li>
 </ol>
-<p>用依赖类型就想写证明，性质一复杂我就晕掉，<code>insert</code>的第二个性质我现在还写不出来，第一个性质可以看<a href="../posts/a-intorduction-to-type-level-haskell-programing.html">Haskell入门</a>。</p>
+<p>用依赖类型就想写证明，性质一复杂我就晕掉，<code>insert</code>的第二个性质我现在还写不出来<del>，第一个性质可以看<a href="../posts/a-intorduction-to-type-level-haskell-programing.html">Haskell入门</a></del>。</p>
 <h1 id="使用smt求解器">使用SMT求解器</h1>
 <p>测试用例的不能覆盖全部输入，写证明又太复杂，如果能自动证明函数的性质那就好了。某天我发现了<code>sbv</code>，<code>sbv</code>可以用SMT求解器来验证程序的性质。而且有很多例子，看起来很诱惑。</p>
 <p>然后我照着例子，把上面第一个性质用sbv写，然后对长度10的列表的插入进行验证，半个钟头没结果。要么是我写的太烂了，要么是求解器在穷举。</p>
