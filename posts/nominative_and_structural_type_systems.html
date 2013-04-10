@@ -2,7 +2,7 @@
 <html>
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-    <title>MgaMPKAy's - 用Feedly快一个月了</title>
+    <title>MgaMPKAy's - Nominative和Structural类型系统</title>
     <link rel="stylesheet" type="text/css" href="../css/default.css" />
   </head>
   <body>
@@ -18,15 +18,39 @@
     </div>
 
     <div id="content">
-      <h1>用Feedly快一个月了</h1>
+      <h1>Nominative和Structural类型系统</h1>
 
       <article>
-  <div class="info">April  9, 2013</div>
+  <div class="info">April 10, 2013</div>
 
   <section>
-    <p>Google Reader被判死刑那天，我就换到了Feedly，虽然也试了另外几个RSS阅读器，感觉还是Feddly最好用。</p>
-<p>也许是我的阅读习惯变了，也许是feed更新变慢了，现在每天都能把Unread消灭，莫名的愉悦。</p>
-<p>我大概能明白“用一生节操换某番不完结”的心情，Google Reader是第一个让我有“给钱求不死”的冲动的免费应用。</p>
+    <h1 id="nominative类型系统">Nominative类型系统</h1>
+<p>在Nominative类型系统中，根据类型的名字（或声明）来判断类型等价，所以又叫name-based type system（基于名字的类型系统）。</p>
+<pre class="sourceCode java"><code class="sourceCode java"><span class="kw">class</span> ClassA {
+        <span class="dt">int</span> a;
+}
+
+<span class="kw">class</span> ClassB {
+       <span class="dt">int</span> a;
+}
+
+ClassA objA = <span class="kw">new</span> <span class="fu">ClassA</span>();
+ClassB objB = <span class="kw">new</span> <span class="fu">ClassB</span>();</code></pre>
+<p>上面的例子中，<code>objA</code>和<code>objB</code>虽然有相同的结构，但是被声明为不同的类型，所以<code>objA</code>和<code>objB</code>不能互换。</p>
+<p>子类型也一样，要通过显式声明来表明一个类型是另一个类型的子类。</p>
+<h1 id="structural类型系统">Structural类型系统</h1>
+<p>结构类型中，通过对象的结构来判断等价和子类关系，对象的结构也就是一些属性和方法，只要两个对象有相同的字段，它们的类型就是等价的。对象A包含对象B的属性，那么对象A就是对象B的子类（子类对父类进行扩展，可增加属性）。</p>
+<p>我接触过的，也就只有Go的interface了。</p>
+<p>Duck typing和结构类型不同，Duck typeing是在运行时进行检测。</p>
+<h1 id="vinly">Vinly</h1>
+<p>Vinly在Haskell里实现了结构类型，以后继续。</p>
+<h1 id="参考">参考</h1>
+<ol style="list-style-type: decimal">
+<li><a href="http://en.wikipedia.org/wiki/Nominative_type_system">Nominative type system</a></li>
+<li><a href="http://en.wikipedia.org/wiki/Structural_type_system">Structural type system</a></li>
+<li><a href="http://www.jonmsterling.com/posts/2013-04-06-vinyl-modern-records-for-haskell.html">Vinly: Modern records for haskell</a></li>
+<li><a href="http://www.reddit.com/r/haskell/comments/1buh5y/vinyl_modern_records_for_haskell/">Reddit上关于Vinly的讨论</a></li>
+</ol>
   </section>
 
   <section id="comment">
