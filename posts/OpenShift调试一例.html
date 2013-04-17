@@ -30,8 +30,8 @@
 <p>Google了一下，没有找到结果，但是我想到了<code>LANG</code>环境变量，在OpenShift的action hook里用<code>env</code>输出环境变量，发现果然没有设置<code>LANG</code>，而且ssh和本机都设了<code>LANG=en_US.UTF-8</code>。</p>
 <p>暂时的解决是在start hook里先设置<code>LANG</code>再运行：</p>
 <pre><code>LANG=en_US.UTF-8 nohup ./naive-bayesian-demo</code></pre>
-<p>然后我在本机<code>unset LANG</code>之后再运行，程序果然会读<code>/usr/lib/gconv/UTF-32.so</code>。</p>
-<p>感觉自己在撞大运，弱爆了。</p>
+<p>然后我在本机<code>unset LANG</code>之后再运行，程序果然会读<code>/usr/lib/gconv/UTF-32.so</code>，但是不会死循环。</p>
+<p>虽然能运行了，但是还是不知道是哪里的问题，感觉自己在撞大运，弱爆了。</p>
   </section>
 
   <section id="comment">
