@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>MgaMPKAy's - 朴素贝叶斯分类演示</title>
+    <link rel="stylesheet" type="text/css" href="../css/default.css" />
+  </head>
+  <body>
+    <div id="header">
+      <div id="logo">
+        <a href="../">MgaMPKAy's Blog</a>
+      </div>
+      <div id="navigation">
+        <a href="../">Home</a>
+        <a href="../about.html">About</a>
+        <a href="../archive.html">Archive</a>
+      </div>
+    </div>
+
+    <div id="content">
+      <h1>朴素贝叶斯分类演示</h1>
+
+      <article>
+  <div class="info">April 18, 2013</div>
+
+  <section>
+    <p><a href="https://nb-mgam.rhcloud.com/">点我传送</a></p>
+<p>用了一个星期，弄了一个朴素贝叶斯分类的演示，记录一下选择。</p>
+<h1 id="文件格式">文件格式</h1>
+<p>最初参考了Weka用的ARFF格式，因为我只处理离散值，而且Parser难写，类型难设计，所以做了很多简化。</p>
+<h1 id="文件解析">文件解析</h1>
+<p>文件解析用了attoparsec和cassava，都是出于对性能的考虑。Hackage上有好几个CSV文件解析的库，只有cassava是用vector，所以就选了cassava。我想用流的方式解析文件，用Mutable vector记录数据，没成功，最后还是要把整个文件读到内存。文件解析的时候，各种类型的字符串转来转去，略麻烦，每次类型不对就转一转，我试过简化一下转换过程，也失败了，</p>
+<h1 id="web框架">Web框架</h1>
+<p>最初我是想用Yesod，因为以前有看过，感觉会比较容易。但是，一想到这个演示处了理静态文件，就只有两个页面，数据库什么的都不用，所以想换个轻量级的框架。那天刚好看了sunroof的一个教程，顺带发现了scotty，看了下API，感觉够用，就决定用scotty了。</p>
+<h1 id="模板">模板</h1>
+<p>scotty不带模板，所以我用blaze-html作为模板。我先用html写一遍，花了不少时间学bootstrap。看起来还可以就转换成blaze-html。用blaze-html写真比html的方便很多，可以把重复部分抽取出来，感觉良好，不过要编译才能看结果，反馈时间要长一点。</p>
+<h1 id="数据处理">数据处理</h1>
+<p>最初，我在服务器端计算出全部的先验和条件概率，然后在浏览器预测新实例的分类。这样扩展起来太麻烦，例如我要加入拉普拉斯平滑，因为我不在服务器端保存数据，所以要同时返回平滑的和没平滑的结果。现在服务器端只简单统计了一些信息，让浏览器端计算概率，公式显示也很容易就实现了（用了Mathjax）。</p>
+<h1 id="两个版本管理系统">两个版本管理系统</h1>
+<p>我一开始就用Darcs管理代码，但是部署到OpenShift的时候用git，要经常复制文件，我想应该可以用cabal来实现，只是没时间看文档，所以还是写了个脚本来复制文件。</p>
+<h1 id="浏览器差异">浏览器差异</h1>
+<p>只在Chromium 26、Firefox和某IE上测试过，显示略有差异，还是Chromium最好。</p>
+  </section>
+
+  <section id="comment">
+    <br />
+    <hr />
+    <div id="disqus_thread"></div>
+    <script type="text/javascript">
+      /* * * CONFIGURATION VARIABLES: EDIT BEFORE PASTING INTO YOUR WEBPAGE * * */
+      var disqus_shortname = 'mgampkay'; // required: replace example with your forum shortname
+
+      /* * * DON'T EDIT BELOW THIS LINE * * */
+      (function() {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+      })();
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+
+    <a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+  </section>
+
+</article>
+
+<script type="text/javascript" src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
+<script type="text/javascript">
+$(document).ready(function() {
+    // Add extra information to code blocks
+    $('code').each(function(){
+    	var title = $(this).attr("class");
+            if(title != '' && title !== undefined){
+                if(title.match('sourceCode')){
+                    var title = title.split(' ')[1];
+                };
+		$(this).before('<span class="language">'+title+'</span>');
+            }
+    });
+});
+</script>
+
+
+    </div>
+    <div id="footer">
+      @mgampkay
+    </div>
+
+    <script type="text/javascript">
+      var _gaq = _gaq || [];
+      _gaq.push(['_setAccount', 'UA-39766360-1']);
+      _gaq.push(['_setDomainName', 'github.io']);
+      _gaq.push(['_setAllowLinker', true]);
+      _gaq.push(['_trackPageview']);
+
+      (function() {
+	  var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+	  ga.src = ('https:' == document.location.protocol ? 'https://' : 'http://') + 'stats.g.doubleclick.net/dc.js';
+	  var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+      })();
+    </script>
+
+  </body>
+</html>
