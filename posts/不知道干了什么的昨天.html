@@ -27,33 +27,35 @@
     <h1 id="pandoc表格">pandoc表格</h1>
 <pre><code> Right     Left     Center     Default
 -------     ------ ----------   -------
-     12     12        12            12
-   123     123      123         123
-       1     1          1                 1</code></pre>
+    12     12        12              12
+   123     123       123            123
+     1     1         1                1
+-------     ------ ----------   -------
+</code></pre>
 <h1 id="ftp命令">ftp命令</h1>
 <table>
 <thead>
 <tr class="header">
-<th align="left">命令 功</th>
-<th align="left">能</th>
+<th align="left">命令</th>
+<th align="center">功能</th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
 <td align="left">get</td>
-<td align="left">下载文件</td>
+<td align="center">下载文件</td>
 </tr>
 <tr class="even">
-<td align="left">close 关</td>
-<td align="left">闭连接</td>
+<td align="left">close</td>
+<td align="center">关闭连接</td>
 </tr>
 <tr class="odd">
 <td align="left">bye</td>
-<td align="left">退出</td>
+<td align="center">退出</td>
 </tr>
 <tr class="even">
-<td align="left">ls,cd,mkdi</td>
-<td align="left">r Shell中等价物</td>
+<td align="left">ls,cd</td>
+<td align="center">Shell中等价物</td>
 </tr>
 </tbody>
 </table>
@@ -65,7 +67,7 @@
 <p>替换WordPress文章中的URL，简单的文本替换都可以这么干：</p>
 <pre class="sourceCode sql"><code class="sourceCode sql"><span class="kw">UPDATE</span> wp_posts <span class="kw">SET</span> post_content = <span class="kw">REPLACE</span> (post_content, <span class="st">'http://from.com'</span>, <span class="st">'http://to.net'</span>);</code></pre>
 <p>重设管理员密码，直接改，用MD5加密：</p>
-<pre class="sourceCode sql"><code class="sourceCode sql"><span class="kw">UPDATE</span>  wp_users <span class="kw">SET</span>  user_pass = MD5(  <span class="st">'password ) WHERE  wp_users.ID =1 LIMIT 1 ;</span></code></pre>
+<pre class="sourceCode sql"><code class="sourceCode sql"><span class="kw">UPDATE</span>  wp_users <span class="kw">SET</span>  user_pass = MD5(<span class="st">'password ) WHERE  wp_users.ID = 1 LIMIT 1 ;</span></code></pre>
 <p>用WordPress还是要熟悉一下WP用到的表。</p>
 <h1 id="jeecms">JEECMS</h1>
 <p>JEECMS只有代码，花了不少时间下它依赖的各种jar。</p>

@@ -2,7 +2,7 @@
 <html>
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-    <title>MgaMPKAy's - Intro</title>
+    <title>MgaMPKAy's - 不知道干了什么的昨天</title>
     <link rel="stylesheet" type="text/css" href="../css/default.css" />
   </head>
   <body>
@@ -18,31 +18,59 @@
     </div>
 
     <div id="content">
-      <h1>Intro</h1>
+      <h1>不知道干了什么的昨天</h1>
 
       <article>
-  <div class="info">January  1, 2015</div>
+  <div class="info">April 20, 2013</div>
 
   <section>
-    <h1 id="文件格式">文件格式</h1>
-<p>文件由属性定义和数据部分组成。</p>
-<p><code>@attribute</code>后跟属性定义，每行定义一个属性，最后一个属性作为分类。属性定义由属性名和值领组成。</p>
-<p>例：</p>
-<pre><code>@attribute
-乌云    是,否
-下雨    是,否</code></pre>
-<p>只支持离散属性。</p>
-<p><code>@data</code>后跟数据部分，格式为CSV。</p>
-<p>例：</p>
-<pre><code>@data
-是,否
-是,是
-否,是</code></pre>
-<p>完整例子：</p>
-<ol style="list-style-type: decimal">
-<li>Weather</li>
-<li>逃课</li>
-</ol>
+    <h1 id="pandoc表格">pandoc表格</h1>
+<pre><code> Right     Left     Center     Default
+-------     ------ ----------   -------
+    12     12        12              12
+   123     123       123            123
+     1     1         1                1
+-------     ------ ----------   -------
+</code></pre>
+<h1 id="ftp命令">ftp命令</h1>
+<table>
+<thead>
+<tr class="header">
+<th align="left">命令</th>
+<th align="center">功能</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">get</td>
+<td align="center">下载文件</td>
+</tr>
+<tr class="even">
+<td align="left">close</td>
+<td align="center">关闭连接</td>
+</tr>
+<tr class="odd">
+<td align="left">bye</td>
+<td align="center">退出</td>
+</tr>
+<tr class="even">
+<td align="left">ls,cd</td>
+<td align="center">Shell中等价物</td>
+</tr>
+</tbody>
+</table>
+<h1 id="从.myd-.myi-.frm文件恢复数据库">从.myd, .myi, .frm文件恢复数据库</h1>
+<p>新建个数据库（CREATE DATABASE），把文件复制到data目录下对应的文件夹，只对MyISAM有效。</p>
+<h1 id="导出mysql数据库到sql文件">导出mysql数据库到sql文件</h1>
+<pre><code>mysqldump  -u root -p database &gt; dump.sql</code></pre>
+<h1 id="一点wordpress">一点WordPress</h1>
+<p>替换WordPress文章中的URL，简单的文本替换都可以这么干：</p>
+<pre class="sourceCode sql"><code class="sourceCode sql"><span class="kw">UPDATE</span> wp_posts <span class="kw">SET</span> post_content = <span class="kw">REPLACE</span> (post_content, <span class="st">'http://from.com'</span>, <span class="st">'http://to.net'</span>);</code></pre>
+<p>重设管理员密码，直接改，用MD5加密：</p>
+<pre class="sourceCode sql"><code class="sourceCode sql"><span class="kw">UPDATE</span>  wp_users <span class="kw">SET</span>  user_pass = MD5(<span class="st">'password ) WHERE  wp_users.ID = 1 LIMIT 1 ;</span></code></pre>
+<p>用WordPress还是要熟悉一下WP用到的表。</p>
+<h1 id="jeecms">JEECMS</h1>
+<p>JEECMS只有代码，花了不少时间下它依赖的各种jar。</p>
   </section>
 
   <section id="comment">
