@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>MgaMPKAy's - JEECMS两日</title>
+    <link rel="stylesheet" type="text/css" href="../css/default.css" />
+  </head>
+  <body>
+    <div id="header">
+      <div id="logo">
+        <a href="../">MgaMPKAy's Blog</a>
+      </div>
+      <div id="navigation">
+        <a href="../">Home</a>
+        <a href="../about.html">About</a>
+        <a href="../archive.html">Archive</a>
+      </div>
+    </div>
+
+    <div id="content">
+      <h1>JEECMS两日</h1>
+
+      <article>
+  <div class="info">April 21, 2013</div>
+
+  <section>
+    <h1 id="安装版">安装版</h1>
+<p>官网论坛上下载的安装版，在Windows下能正常安装运行，在Linux下就不行了，都是tomcat 6和jdk 1.7，略奇怪。</p>
+<p>第一个错误：</p>
+<pre><code>java.lang.NoClassDefFoundError: Could not initialize class com.octo.captcha.image.gimpy.GimpyFactory</code></pre>
+<p>我下载了一个jcaptcha-all-1.0-RC6.jar替换掉自带的jcaptcha-1.0.jar，解决这个问题之后出现第二个问题,GenericManageableCaptchaServic参数不对。</p>
+<p>看jcaptcha文档得知，<code>GenericManageableCaptchaService</code>的构造器只有3个参数，所以修改captcha-context-xml，去掉第4个参数。</p>
+<pre class="sourceCode xml"><code class="sourceCode xml"><span class="kw">&lt;bean</span><span class="ot"> id=</span><span class="st">&quot;captchaService&quot;</span><span class="ot"> class=</span><span class="st">&quot;com.octo.captcha.service.multitype.GenericManageableCaptchaService&quot;</span><span class="kw">&gt;</span>
+		<span class="kw">&lt;constructor-arg</span><span class="ot"> index=</span><span class="st">&quot;0&quot;</span><span class="ot"> ref=</span><span class="st">&quot;imageEngine&quot;</span><span class="kw">/&gt;</span>
+		<span class="kw">&lt;constructor-arg</span><span class="ot"> type=</span><span class="st">&quot;int&quot;</span><span class="ot"> index=</span><span class="st">&quot;1&quot;</span><span class="ot"> value=</span><span class="st">&quot;180&quot;</span><span class="kw">/&gt;</span>
+		<span class="kw">&lt;constructor-arg</span><span class="ot"> type=</span><span class="st">&quot;int&quot;</span><span class="ot"> index=</span><span class="st">&quot;2&quot;</span><span class="ot"> value=</span><span class="st">&quot;100000&quot;</span><span class="kw">/&gt;</span>
+		<span class="co">&lt;!-- &lt;constructor-arg type=&quot;int&quot; index=&quot;3&quot; value=&quot;75000&quot;/&gt; --&gt;</span>
+<span class="kw">&lt;/bean&gt;</span></code></pre>
+<h1 id="乱码">乱码</h1>
+<p>JEECMS一些模板是中文名的，用unzip解压要注意，不然会有乱码，我直接下载编译unzip 6.10b，加<code>-O CP936</code>解压。</p>
+<h1 id="重定向">重定向</h1>
+<p>我一开始以为这部分最简单，结果把<code>!=</code>写成<code>==</code>花了我不时间debug。</p>
+<p>要实现把所有为登陆的请求重定向到登陆页面，可以利用Spring的HandlerInterceptor实现。。因为自己对Spring不熟，所以直接改了JEECMSd的FrontContextInterceptor，它原来就有判断用户登陆，所以很简单就实现重定向。</p>
+<p>在重定向的时候，要注意的是有些请求不能重定向到登陆页面，例如注册页面、和找回密码等等。一开始我用grep找出可以用GET请求的URL，然后自己判断是否允许。</p>
+<p>只能GET：</p>
+<pre><code>grep -r &quot;@RequestMapping&quot; | grep GET | grep '&quot;.*\.jspx&quot;' -oh | sort  | uniq</code></pre>
+<p>能GET能POST：</p>
+<pre><code>grep -r &quot;@RequestMapping&quot; | grep -v POST | grep '&quot;.*\.jspx&quot;' -oh | sort  | uniq</code></pre>
+<p>后来，我是直接操作一遍，记录下要放行URL就可以了。</p>
+<h1 id="编译">编译</h1>
+<p>用笨方法，直接编译，然后连代码一起打包成jar就可以了。</p>
+<pre><code>find com -name &quot;*.java&quot; | xargs -I file javac -g file -cp .:/tmp/tmproot/lib/*:/tmp/tmproot/webapps/ROOT/WEB-INF/lib/*
+jar cf jeecms-all.jar com/</code></pre>
+<p>和代码一起打包是为了方便打包xml文件，如果忘了和hibernate用的xml一起打包，就会出现<code>XXXX is not mapped</code>的异常。用<code>-g</code>编译，是因为JEECMS用<code>@RequestMapping</code>但又不用注解指定参数的后果。</p>
+<h1 id="其他">其他</h1>
+<p>今天是我最频繁用grep和find的一天，很难想像没有这些工具，要怎样快速定位到文件。犯过一些低级错误之后，我明白了昏昏欲睡的时候就应该好好休息。</p>
+  </section>
+
+  <section id="comment">
+    <br />
+    <hr />
+    <div id="disqus_thread"></div>
+    <script type="text/javascript">
+      /* * * CONFIGURATION VARIABLES: EDIT BEFORE PASTING INTO YOUR WEBPAGE * * */
+      var disqus_shortname = 'mgampkay'; // required: replace example with your forum shortname
+
+      /* * * DON'T EDIT BELOW THIS LINE * * */
+      (function() {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+      })();
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+
+    <a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+  </section>
+
+</article>
+
+<script type="text/javascript" src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
+<script type="text/javascript">
+$(document).ready(function() {
+    // Add extra information to code blocks
+    $('code').each(function(){
+    	var title = $(this).attr("class");
+            if(title != '' && title !== undefined){
+                if(title.match('sourceCode')){
+                    var title = title.split(' ')[1];
+                };
+		$(this).before('<span class="language">'+title+'</span>');
+            }
+    });
+});
+</script>
+
+
+    </div>
+    <div id="footer">
+      @mgampkay
+    </div>
+
+    <script type="text/javascript">
+      var _gaq = _gaq || [];
+      _gaq.push(['_setAccount', 'UA-39766360-1']);
+      _gaq.push(['_setDomainName', 'github.io']);
+      _gaq.push(['_setAllowLinker', true]);
+      _gaq.push(['_trackPageview']);
+
+      (function() {
+	  var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+	  ga.src = ('https:' == document.location.protocol ? 'https://' : 'http://') + 'stats.g.doubleclick.net/dc.js';
+	  var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+      })();
+    </script>
+
+  </body>
+</html>
