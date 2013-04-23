@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>MgaMPKAy's - 逗号放哪里？</title>
+    <link rel="stylesheet" type="text/css" href="../css/default.css" />
+  </head>
+  <body>
+    <div id="header">
+      <div id="logo">
+        <a href="../">MgaMPKAy's Blog</a>
+      </div>
+      <div id="navigation">
+        <a href="../">Home</a>
+        <a href="../about.html">About</a>
+        <a href="../archive.html">Archive</a>
+      </div>
+    </div>
+
+    <div id="content">
+      <h1>逗号放哪里？</h1>
+
+      <article>
+  <div class="info">April 23, 2013</div>
+
+  <section>
+    <p>在Haskell，我习惯把逗号放在前面：</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell">js_urls <span class="fu">=</span> [ <span class="st">&quot;/js/jquery-1.9.1.min.js&quot;</span>
+          , <span class="st">&quot;/js/bootstrap.min.js&quot;</span>
+          , <span class="st">&quot;/js/mathjax_config.js&quot;</span>
+          ]</code></pre>
+<p>这样:</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">module</span> <span class="dt">NaiveBayesian.Templates</span>
+    (
+      indexMarkup
+    , resultMarkup
+    , condProbsTable
+    , condProbsFormula
+    , evidencesTable
+    , evidencesFormula
+    , fileUploadMarkup
+    , inputMarkup
+    , renderHtml
+    )
+<span class="kw">where</span></code></pre>
+<p>当时看了别人写的Haskell代码，发现很多人都这样写，自己跟风学着写，现在习惯了，在把逗号放后面就很感觉很怪。</p>
+<p>前两天我改JEECMS的代码，试着在Java里也这么写：</p>
+<pre class="sourceCode java"><code class="sourceCode java"><span class="kw">private</span> String[] allowedURL = { <span class="st">&quot;login.jspx&quot;</span>
+			      , <span class="st">&quot;register.jspx&quot;</span>
+			      , <span class="st">&quot;unique_email.jspx&quot;</span>
+			      , <span class="st">&quot;unique_name.jspx&quot;</span>
+                              };</code></pre>
+<p>感觉有点怪，没有想像中好看。</p>
+<p>最后还是改回：</p>
+<pre class="sourceCode java"><code class="sourceCode java"><span class="kw">private</span> String[] allowedURL = { <span class="st">&quot;login.jspx&quot;</span>,
+				<span class="st">&quot;register.jspx&quot;</span>,
+				<span class="st">&quot;unique_email.jspx&quot;</span>,
+				<span class="st">&quot;unique_name.jspx&quot;</span>
+                              };</code></pre>
+<p>果然在不同的语言，我习惯不同的风格。</p>
+  </section>
+
+  <section id="comment">
+    <br />
+    <hr />
+    <div id="disqus_thread"></div>
+    <script type="text/javascript">
+      /* * * CONFIGURATION VARIABLES: EDIT BEFORE PASTING INTO YOUR WEBPAGE * * */
+      var disqus_shortname = 'mgampkay'; // required: replace example with your forum shortname
+
+      /* * * DON'T EDIT BELOW THIS LINE * * */
+      (function() {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+      })();
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+
+    <a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+  </section>
+
+</article>
+
+<script type="text/javascript" src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
+<script type="text/javascript">
+$(document).ready(function() {
+    // Add extra information to code blocks
+    $('code').each(function(){
+    	var title = $(this).attr("class");
+            if(title != '' && title !== undefined){
+                if(title.match('sourceCode')){
+                    var title = title.split(' ')[1];
+                };
+		$(this).before('<span class="language">'+title+'</span>');
+            }
+    });
+});
+</script>
+
+
+    </div>
+    <div id="footer">
+      @mgampkay
+    </div>
+
+    <script type="text/javascript">
+      var _gaq = _gaq || [];
+      _gaq.push(['_setAccount', 'UA-39766360-1']);
+      _gaq.push(['_setDomainName', 'github.io']);
+      _gaq.push(['_setAllowLinker', true]);
+      _gaq.push(['_trackPageview']);
+
+      (function() {
+	  var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+	  ga.src = ('https:' == document.location.protocol ? 'https://' : 'http://') + 'stats.g.doubleclick.net/dc.js';
+	  var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+      })();
+    </script>
+
+  </body>
+</html>
