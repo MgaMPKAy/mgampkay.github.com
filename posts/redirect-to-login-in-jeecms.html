@@ -37,11 +37,11 @@
 <p><code>isAllowed</code>方法用于判断是否允于未登录时直接访问:</p>
 <pre class="sourceCode java"><code class="sourceCode java"><span class="kw">private</span> <span class="dt">boolean</span> <span class="fu">isAllowed</span>(HttpServletRequest request)
 	    <span class="kw">throws</span> ServletException {
-    	String[] allowedUrl = {<span class="st">&quot;login.jspx&quot;</span>};
+    String[] allowedUrl = {<span class="st">&quot;login.jspx&quot;</span>};
     String  requestURI  = request.<span class="fu">getRequestURI</span>();
 
     <span class="kw">if</span> (!request.<span class="fu">getMethod</span>().<span class="fu">equals</span>(<span class="st">&quot;GET&quot;</span>)) {
-       		<span class="kw">return</span> <span class="kw">true</span>;
+       	<span class="kw">return</span> <span class="kw">true</span>;
     }
 
     <span class="kw">for</span> (<span class="dt">int</span> i = <span class="dv">0</span>; i &lt; allowedUrl.<span class="fu">length</span>; i++) {
@@ -60,8 +60,8 @@
 <span class="kw">&lt;/filter&gt;</span></code></pre>
 <p>要过滤*.jhtml, *.html, *.htm的请求,加上AuthFilter,例如</p>
 <pre class="sourceCode xml"><code class="sourceCode xml"><span class="kw">&lt;filter-mapping&gt;</span>
-        <span class="kw">&lt;filter-name&gt;</span>authFilter<span class="kw">&lt;/filter-name&gt;</span>
-        <span class="kw">&lt;url-pattern&gt;</span>*.jhtml<span class="kw">&lt;/url-pattern&gt;</span>
+    <span class="kw">&lt;filter-name&gt;</span>authFilter<span class="kw">&lt;/filter-name&gt;</span>
+    <span class="kw">&lt;url-pattern&gt;</span>*.jhtml<span class="kw">&lt;/url-pattern&gt;</span>
 <span class="kw">&lt;/filter-mapping&gt;</span></code></pre>
 <p>AuthFilter.java:</p>
 <pre class="sourceCode java"><code class="sourceCode java"><span class="kw">public</span> <span class="dt">void</span> <span class="fu">doFilter</span>(ServletRequest req,
@@ -89,7 +89,7 @@
         chain.<span class="fu">doFilter</span>(req, rep);
 	}
 }</code></pre>
-<p>主体参考<code>FrontContextInterceptor</code>, 因为在<code>web.xml</code>配置filter, 所以在<code>AuthFilter</code>直接用<code>WebApplicationContextUtil</code>拿到<code>ApplicationContex</code>, 再拿到判断登用用的<code>AuthenticationMn</code>,<code>CmsUserMn</code>。</p>
+<p>主体参考<code>FrontContextInterceptor</code>, 因为在<code>web.xml</code>配置filter, 所以在<code>AuthFilter</code>直接用<code>WebApplicationContextUtil</code>拿到<code>ApplicationContex</code>, 再拿到判断登用用的<code>AuthenticationMng</code>,<code>CmsUserMng</code>。</p>
   </section>
 
   <section id="comment">
