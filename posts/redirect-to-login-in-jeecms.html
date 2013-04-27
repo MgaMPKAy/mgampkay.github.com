@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>MgaMPKAy's - JEECMS重定向到登陆页面</title>
+    <link rel="stylesheet" type="text/css" href="../css/default.css" />
+  </head>
+  <body>
+    <div id="header">
+      <div id="logo">
+        <a href="../">MgaMPKAy's Blog</a>
+      </div>
+      <div id="navigation">
+        <a href="../">Home</a>
+        <a href="../about.html">About</a>
+        <a href="../archive.html">Archive</a>
+      </div>
+    </div>
+
+    <div id="content">
+      <h1>JEECMS重定向到登陆页面</h1>
+
+      <article>
+  <div class="info">April 27, 2013</div>
+
+  <section>
+    <p>需求：把所有未登陆的请求重定向到登陆页面</p>
+<h1 id="用handler-interceptor验证登陆">用Handler Interceptor验证登陆</h1>
+<p>JEECMS的FrontContextInterceptor已经实现了判断用户是否登陆的逻辑，只要在这基础上加上重定向就可以了。</p>
+<p>修改FrontContextInterceptor.java:</p>
+<pre class="sourceCode java"><code class="sourceCode java"><span class="kw">if</span> (user != <span class="kw">null</span>) {
+    CmsUtils.<span class="fu">setUser</span>(request, user);
+} <span class="kw">else</span> <span class="kw">if</span> (!<span class="fu">isAllowed</span>(request)) {
+    response.<span class="fu">sendRedirect</span>(request.<span class="fu">getContextPath</span>() + site.<span class="fu">getLoginUrl</span>());
+    <span class="kw">return</span> <span class="kw">false</span>;
+}</code></pre>
+<p><code>isAllowed</code>方法用于判断是否允于未登录时直接访问:</p>
+<pre class="sourceCode java"><code class="sourceCode java"><span class="kw">private</span> <span class="dt">boolean</span> <span class="fu">isAllowed</span>(HttpServletRequest request)
+	    <span class="kw">throws</span> ServletException {
+    	String[] allowedUrl = {<span class="st">&quot;login.jspx&quot;</span>};
+    String  requestURI  = request.<span class="fu">getRequestURI</span>();
+
+    <span class="kw">if</span> (!request.<span class="fu">getMethod</span>().<span class="fu">equals</span>(<span class="st">&quot;GET&quot;</span>)) {
+       		<span class="kw">return</span> <span class="kw">true</span>;
+    }
+
+    <span class="kw">for</span> (<span class="dt">int</span> i = <span class="dv">0</span>; i &lt; allowedUrl.<span class="fu">length</span>; i++) {
+       	<span class="kw">if</span> (requestURI.<span class="fu">indexOf</span>(allowedUrl[i]) != -<span class="dv">1</span>) {
+            <span class="kw">return</span> <span class="kw">true</span>;
+    	}
+    }
+    <span class="kw">return</span> <span class="kw">false</span>;
+}</code></pre>
+<h1 id="用filter验证登陆">用Filter验证登陆</h1>
+<p>对静态页面，FrontContextInterceptor是不会处理的，所以再实现一个filter来处理。</p>
+<p>web.xml:</p>
+<pre class="sourceCode xml"><code class="sourceCode xml"><span class="kw">&lt;filter&gt;</span>
+    <span class="kw">&lt;filter-name&gt;</span>authFilter<span class="kw">&lt;/filter-name&gt;</span>
+    <span class="kw">&lt;filter-class&gt;</span>com.jeecms.common.web.AuthFilter<span class="kw">&lt;/filter-class&gt;</span>
+<span class="kw">&lt;/filter&gt;</span></code></pre>
+<p>要过滤*.jhtml, *.html, *.htm的请求,加上AuthFilter,例如</p>
+<pre class="sourceCode xml"><code class="sourceCode xml"><span class="kw">&lt;filter-mapping&gt;</span>
+        <span class="kw">&lt;filter-name&gt;</span>authFilter<span class="kw">&lt;/filter-name&gt;</span>
+        <span class="kw">&lt;url-pattern&gt;</span>*.jhtml<span class="kw">&lt;/url-pattern&gt;</span>
+<span class="kw">&lt;/filter-mapping&gt;</span></code></pre>
+<p>AuthFilter.java:</p>
+<pre class="sourceCode java"><code class="sourceCode java"><span class="kw">public</span> <span class="dt">void</span> <span class="fu">doFilter</span>(ServletRequest req,
+			ServletResponse rep, FilterChain chain)
+		<span class="kw">throws</span> ServletException, IOException {
+
+	HttpServletRequest request = (HttpServletRequest) req;
+	HttpServletResponse response = (HttpServletResponse) rep;
+
+	ServletContext sc = config.<span class="fu">getServletContext</span>();
+	ApplicationContext context = WebApplicationContextUtils.<span class="fu">getWebApplicationContext</span>(sc);
+
+	CmsUserMng cmsUserMng = (CmsUserMng)context.<span class="fu">getBean</span>(<span class="st">&quot;cmsUserMng&quot;</span>);
+	AuthenticationMng authMng = (AuthenticationMng)context.<span class="fu">getBean</span>(<span class="st">&quot;authenticationMng&quot;</span>);
+
+	CmsUser user = <span class="kw">null</span>;
+	Integer userId = authMng.<span class="fu">retrieveUserIdFromSession</span>(session, request);
+	<span class="kw">if</span> (userId != <span class="kw">null</span>) {
+        user = cmsUserMng.<span class="fu">findById</span>(userId);
+   	}
+
+	<span class="kw">if</span> (user == <span class="kw">null</span> &amp;&amp; (!<span class="fu">isAllowed</span>(request)))  {
+        response.<span class="fu">sendRedirect</span>(request.<span class="fu">getContextPath</span>() + <span class="st">&quot;/login.jspx&quot;</span>);
+	} <span class="kw">else</span> {
+        chain.<span class="fu">doFilter</span>(req, rep);
+	}
+}</code></pre>
+<p>主体参考<code>FrontContextInterceptor</code>, 因为在<code>web.xml</code>配置filter, 所以在<code>AuthFilter</code>直接用<code>WebApplicationContextUtil</code>拿到<code>ApplicationContex</code>, 再拿到判断登用用的<code>AuthenticationMn</code>,<code>CmsUserMn</code>。</p>
+  </section>
+
+  <section id="comment">
+    <br />
+    <hr />
+    <div id="disqus_thread"></div>
+    <script type="text/javascript">
+      /* * * CONFIGURATION VARIABLES: EDIT BEFORE PASTING INTO YOUR WEBPAGE * * */
+      var disqus_shortname = 'mgampkay'; // required: replace example with your forum shortname
+
+      /* * * DON'T EDIT BELOW THIS LINE * * */
+      (function() {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+      })();
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+
+    <a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+  </section>
+
+</article>
+
+<script type="text/javascript" src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
+<script type="text/javascript">
+$(document).ready(function() {
+    // Add extra information to code blocks
+    $('code').each(function(){
+    	var title = $(this).attr("class");
+            if(title != '' && title !== undefined){
+                if(title.match('sourceCode')){
+                    var title = title.split(' ')[1];
+                };
+		$(this).before('<span class="language">'+title+'</span>');
+            }
+    });
+});
+</script>
+
+
+    </div>
+    <div id="footer">
+      @mgampkay
+    </div>
+
+    <script type="text/javascript">
+      var _gaq = _gaq || [];
+      _gaq.push(['_setAccount', 'UA-39766360-1']);
+      _gaq.push(['_setDomainName', 'github.io']);
+      _gaq.push(['_setAllowLinker', true]);
+      _gaq.push(['_trackPageview']);
+
+      (function() {
+	  var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+	  ga.src = ('https:' == document.location.protocol ? 'https://' : 'http://') + 'stats.g.doubleclick.net/dc.js';
+	  var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+      })();
+    </script>
+
+  </body>
+</html>
