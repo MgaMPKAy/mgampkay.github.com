@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>MgaMPKAy's - 用Template Haskell嵌入文件</title>
+    <link rel="stylesheet" type="text/css" href="../css/default.css" />
+  </head>
+  <body>
+    <div id="header">
+      <div id="logo">
+        <a href="../">MgaMPKAy's Blog</a>
+      </div>
+      <div id="navigation">
+        <a href="../">Home</a>
+        <a href="../about.html">About</a>
+        <a href="../archive.html">Archive</a>
+      </div>
+    </div>
+
+    <div id="content">
+      <h1>用Template Haskell嵌入文件</h1>
+
+      <article>
+  <div class="info">April 30, 2013</div>
+
+  <section>
+    <p>今天，我想把之前贝叶斯演示里的CSS和JS文件编译进程序，部署的时候就只用一个二进制程序就可以了。</p>
+<p>最后希望这样可以使用：</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">result_css ::</span> <span class="dt">Text</span>
+result_css <span class="fu">=</span> <span class="fu">$</span>(loadFile <span class="st">&quot;static/css/result.css&quot;</span>)</code></pre>
+<p>我的第一次尝试：</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">import</span> <span class="kw">qualified</span> Data.Text.IO <span class="kw">as</span> TIO
+
+<span class="ot">loadFile ::</span> <span class="fu">FilePath</span> <span class="ot">-&gt;</span> <span class="dt">Q</span> <span class="dt">Exp</span>
+loadFile filepath <span class="fu">=</span> <span class="kw">do</span>
+    file <span class="ot">&lt;-</span> runIO <span class="fu">$</span> TIO.readFile filepath
+    [<span class="fu">|</span> file <span class="fu">|</span>]</code></pre>
+<p>因为只有<code>Lift</code>类的值才能直接插进 <code>[| ... |]</code>, 但是<code>Text</code>不是<code>Lift</code>类，我试着自己实现，无果。</p>
+<p>然后我去看<code>shakespeare</code>的代码，更复杂了。最后我发现了<code>file-embed</code>，它不是直接插入<code>ByteString</code>, 而是返回了一个<code>AppE</code>表达式(<code>Exp</code>)， 在这个表达式里转换。</p>
+<p>我简化一点，足够自己用：</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">loadFile ::</span> <span class="fu">FilePath</span> <span class="ot">-&gt;</span> <span class="dt">Q</span> <span class="dt">Exp</span>
+loadFile filepath <span class="fu">=</span> <span class="kw">do</span>
+    str <span class="ot">&lt;-</span> runIO <span class="fu">$</span> <span class="fu">readFile</span> filepath
+    convert <span class="ot">&lt;-</span> [<span class="fu">|</span> T.pack <span class="fu">|</span>]
+    <span class="fu">return</span> <span class="fu">$</span> <span class="dt">AppE</span> convert <span class="fu">$</span> <span class="dt">LitE</span> <span class="fu">$</span> <span class="dt">StringL</span> str</code></pre>
+<p>在Scotty里，我用一个HashMap来放文件:</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">cssFiles ::</span> <span class="dt">H.HashMap</span> <span class="dt">Text</span> <span class="dt">Text</span>
+cssFiles <span class="fu">=</span> H.fromList
+    [ (<span class="st">&quot;login.css&quot;</span>,  <span class="fu">$</span>(loadFile <span class="st">&quot;static/css/login.css&quot;</span>))
+    , (<span class="st">&quot;result.css&quot;</span>, <span class="fu">$</span>(loadFile <span class="st">&quot;static/css/result.css&quot;</span>))
+    ]</code></pre>
+<p>然后在Handler里lookup:</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell">get <span class="st">&quot;/static/css/:file&quot;</span> <span class="fu">$</span> <span class="kw">do</span>
+        file <span class="ot">&lt;-</span> param <span class="st">&quot;file&quot;</span>
+        <span class="kw">case</span> H.lookup file cssFiles <span class="kw">of</span>
+          <span class="kw">Nothing</span> <span class="ot">-&gt;</span> status status404
+          <span class="kw">Just</span> f  <span class="ot">-&gt;</span> text f <span class="fu">&gt;&gt;</span> header <span class="st">&quot;Content-type&quot;</span> <span class="st">&quot;text/css&quot;</span></code></pre>
+<p>这比原来用<code>wai-middleware-static</code>麻烦多了。</p>
+  </section>
+
+  <section id="comment">
+    <br />
+    <hr />
+    <div id="disqus_thread"></div>
+    <script type="text/javascript">
+      /* * * CONFIGURATION VARIABLES: EDIT BEFORE PASTING INTO YOUR WEBPAGE * * */
+      var disqus_shortname = 'mgampkay'; // required: replace example with your forum shortname
+
+      /* * * DON'T EDIT BELOW THIS LINE * * */
+      (function() {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+      })();
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+
+    <a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+  </section>
+
+</article>
+
+<script type="text/javascript" src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
+<script type="text/javascript">
+$(document).ready(function() {
+    // Add extra information to code blocks
+    $('code').each(function(){
+    	var title = $(this).attr("class");
+            if(title != '' && title !== undefined){
+                if(title.match('sourceCode')){
+                    var title = title.split(' ')[1];
+                };
+		$(this).before('<span class="language">'+title+'</span>');
+            }
+    });
+});
+</script>
+
+
+    </div>
+    <div id="footer">
+      @mgampkay
+    </div>
+
+    <script type="text/javascript">
+      var _gaq = _gaq || [];
+      _gaq.push(['_setAccount', 'UA-39766360-1']);
+      _gaq.push(['_setDomainName', 'github.io']);
+      _gaq.push(['_setAllowLinker', true]);
+      _gaq.push(['_trackPageview']);
+
+      (function() {
+	  var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+	  ga.src = ('https:' == document.location.protocol ? 'https://' : 'http://') + 'stats.g.doubleclick.net/dc.js';
+	  var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+      })();
+    </script>
+
+  </body>
+</html>
