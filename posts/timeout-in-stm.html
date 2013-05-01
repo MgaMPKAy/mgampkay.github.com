@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>MgaMPKAy's - STM中超时处理</title>
+    <link rel="stylesheet" type="text/css" href="../css/default.css" />
+  </head>
+  <body>
+    <div id="header">
+      <div id="logo">
+        <a href="../">MgaMPKAy's Blog</a>
+      </div>
+      <div id="navigation">
+        <a href="../">Home</a>
+        <a href="../about.html">About</a>
+        <a href="../archive.html">Archive</a>
+      </div>
+    </div>
+
+    <div id="content">
+      <h1>STM中超时处理</h1>
+
+      <article>
+  <div class="info">May  1, 2013</div>
+
+  <section>
+    <p>今天弄一个查英语单词的小工具，给他一堆单词，从QQ词典得到每个单词的意思。我先把所有单词读进一个队列，然后用多个<code>worker</code>从队列里取单词，从QQ词典得到意思，再写到一个输出队列。同时有一个<code>consumer</code>从输出队列取单词意思再写到文件。</p>
+<p><code>consumer</code>必须要等全部<code>worker</code>都结束了才能退出，不然就会错过一些结果。所以我一个TVar变量<code>workerCount</code>记录worker的个数，每个<code>worker</code>结束的时候都会把这个变量减1，而<code>consumer</code>在输出队列为空的时候就检查<code>workerCount</code>，如果为0，那么<code>consumer</code>也可以结束了，因为这时已经没有<code>worker</code>，而且输出队列的结果也处理完了。</p>
+<p>我的第一个实现大概是这样的</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">consumer ::</span> <span class="dt">TQueue</span> <span class="dt">Word</span> <span class="ot">-&gt;</span> <span class="dt">TVar</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()
+consumer output workerCount  <span class="fu">=</span> <span class="kw">do</span>
+    state <span class="ot">&lt;-</span> atomically <span class="fu">$</span> <span class="kw">do</span>
+
+        mword <span class="ot">&lt;-</span> tryReadTQueue output     <span class="co">-- 尝试从输出队列读结果 (1)</span>
+        <span class="kw">case</span> mword <span class="kw">of</span>
+          <span class="kw">Just</span> w <span class="ot">-&gt;</span> <span class="fu">return</span> (<span class="dt">GetOutput</span> w)  <span class="co">-- 输出队列不为空</span>
+          <span class="kw">Nothing</span> <span class="ot">-&gt;</span> <span class="kw">do</span>                   <span class="co">-- 输出队列空         (2)</span>
+            count <span class="ot">&lt;-</span> readTVar workerCount <span class="co">-- 检查woker个数      (3)</span>
+            <span class="kw">if</span> count <span class="fu">==</span> <span class="dv">0</span>
+               <span class="kw">then</span> <span class="fu">return</span> <span class="dt">Finish</span>    <span class="co">-- worker数为0，consumer可以结束</span>
+               <span class="kw">else</span> <span class="fu">return</span> <span class="dt">NoOutput</span>  <span class="co">-- worker数不为0，consumer不能结束 (4)</span>
+
+    <span class="co">-- 根据consumer状态循环或退出</span>
+    <span class="kw">case</span> state <span class="kw">of</span>
+      <span class="dt">NoOutput</span> <span class="ot">-&gt;</span> consumer output workerCount
+      <span class="dt">Finish</span>   <span class="ot">-&gt;</span> <span class="fu">return</span> ()
+      <span class="dt">GetOutput</span> word <span class="ot">-&gt;</span> <span class="kw">do</span>
+        <span class="fu">print</span> word
+        consumer output workerCount timeout action</code></pre>
+<p>上面<code>(1)</code>的<code>tryReadTQueue</code>是不会阻塞的，如果用<code>readTQueue</code>，会在这里堵塞，后面的检查就没办法做了。因为IO慢，所以大部分时间输出队列都是空的，所以<code>consumer</code>就会不断进行<code>1-2-3-4</code>的循环。所以这里需要超时操作，来减少这样无用的循环。</p>
+<p>但是在STM里是不能执行IO操作的，所以不能直接<code>System.Timeout.timeout</code>。不过我们可以曲线救国，用STM的<code>orElse</code>来实现。<code>orElse</code>会返回两个STM操作中先完成的一个。</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">consumer ::</span> <span class="dt">TQueue</span> <span class="dt">Word</span> <span class="ot">-&gt;</span> <span class="dt">TVar</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">TMVar</span> (<span class="dt">Maybe</span> <span class="dt">Word</span>) <span class="fu">&gt;</span> <span class="dt">IO</span> ()
+consumer output workerCount timeout <span class="fu">=</span> <span class="kw">do</span>
+    state <span class="ot">&lt;-</span> atomically <span class="fu">$</span> <span class="kw">do</span>
+        <span class="co">-- use timeout to avoid busy loop</span>
+        mword <span class="ot">&lt;-</span> (<span class="kw">Just</span> <span class="fu">&lt;$&gt;</span> readTQueue output) <span class="ot">`orElse`</span> takeTMVar timeout
+        <span class="kw">case</span> mword <span class="kw">of</span>
+        <span class="fu">...</span></code></pre>
+<p>consumer里只要改改对队列的部分，<code>readTQueue</code>和<code>takeTMVar</code>都是会阻塞的，<code>orElse</code>会选择先完成的一个。接着就是在另一个线程里定时向timeout里写Nothing，让<code>takeTMVar</code>可以定时返回：</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">timeoutThead ::</span> <span class="dt">TMVar</span> (<span class="dt">Maybe</span> a) <span class="ot">-&gt;</span> <span class="dt">IO</span> b
+timeoutThead timeout <span class="fu">=</span> forever <span class="fu">$</span> <span class="kw">do</span>
+    threadDelay (<span class="dv">10</span><span class="fu">^</span>(<span class="dv">6</span><span class="ot">::</span><span class="dt">Int</span>))
+    atomically <span class="fu">$</span> putTMVar timeout <span class="kw">Nothing</span></code></pre>
+<p>这方法虽然不好扩展，但是处理1000个单词的时候，user时间从57秒多减少到4秒。</p>
+  </section>
+
+  <section id="comment">
+    <br />
+    <hr />
+    <div id="disqus_thread"></div>
+    <script type="text/javascript">
+      /* * * CONFIGURATION VARIABLES: EDIT BEFORE PASTING INTO YOUR WEBPAGE * * */
+      var disqus_shortname = 'mgampkay'; // required: replace example with your forum shortname
+
+      /* * * DON'T EDIT BELOW THIS LINE * * */
+      (function() {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+      })();
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+
+    <a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+  </section>
+
+</article>
+
+<script type="text/javascript" src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
+<script type="text/javascript">
+$(document).ready(function() {
+    // Add extra information to code blocks
+    $('code').each(function(){
+    	var title = $(this).attr("class");
+            if(title != '' && title !== undefined){
+                if(title.match('sourceCode')){
+                    var title = title.split(' ')[1];
+                };
+		$(this).before('<span class="language">'+title+'</span>');
+            }
+    });
+});
+</script>
+
+
+    </div>
+    <div id="footer">
+      @mgampkay
+    </div>
+
+    <script type="text/javascript">
+      var _gaq = _gaq || [];
+      _gaq.push(['_setAccount', 'UA-39766360-1']);
+      _gaq.push(['_setDomainName', 'github.io']);
+      _gaq.push(['_setAllowLinker', true]);
+      _gaq.push(['_trackPageview']);
+
+      (function() {
+	  var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+	  ga.src = ('https:' == document.location.protocol ? 'https://' : 'http://') + 'stats.g.doubleclick.net/dc.js';
+	  var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+      })();
+    </script>
+
+  </body>
+</html>
