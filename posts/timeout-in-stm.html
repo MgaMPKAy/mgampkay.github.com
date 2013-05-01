@@ -2,7 +2,7 @@
 <html>
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-    <title>MgaMPKAy's - STM中的超时处理</title>
+    <title>MgaMPKAy's - STM中的延时操作</title>
     <link rel="stylesheet" type="text/css" href="../css/default.css" />
   </head>
   <body>
@@ -18,7 +18,7 @@
     </div>
 
     <div id="content">
-      <h1>STM中的超时处理</h1>
+      <h1>STM中的延时操作</h1>
 
       <article>
   <div class="info">May  1, 2013</div>
@@ -47,20 +47,20 @@ consumer output workerCount  <span class="fu">=</span> <span class="kw">do</span
       <span class="dt">GetOutput</span> word <span class="ot">-&gt;</span> <span class="kw">do</span>
         <span class="fu">print</span> word
         consumer output workerCount timeout action</code></pre>
-<p>上面<code>(1)</code>的<code>tryReadTQueue</code>是不会阻塞的，如果用<code>readTQueue</code>，会在这里堵塞，后面的检查就没办法做了。因为IO慢，所以大部分时间输出队列都是空的，所以<code>consumer</code>就会不断进行<code>1-2-3-4</code>的循环。所以这里需要超时操作，来减少这样无用的循环。</p>
-<p>但是在STM里是不能执行IO操作的，所以不能直接<code>System.Timeout.timeout</code>。不过我们可以曲线救国，用STM的<code>orElse</code>来实现。<code>orElse</code>会返回两个STM操作中先完成的一个。</p>
+<p>上面<code>(1)</code>的<code>tryReadTQueue</code>是不会阻塞的，如果用<code>readTQueue</code>，会在这里堵塞，后面的检查就没办法做了。因为IO慢，所以大部分时间输出队列都是空的，所以<code>consumer</code>就会不断进行<code>1-2-3-4</code>的循环。所以这里需要延时操作(<code>sleep</code>)，来减少这样无用的循环。</p>
+<p>但是在STM里是不能执行IO操作的，所以不能直接<code>System.Timeout.timeout</code>和<code>threadDelay</code>。不过我们可以曲线救国，用STM的<code>orElse</code>来实现。</p>
 <pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">consumer ::</span> <span class="dt">TQueue</span> <span class="dt">Word</span> <span class="ot">-&gt;</span> <span class="dt">TVar</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">TMVar</span> (<span class="dt">Maybe</span> <span class="dt">Word</span>) <span class="fu">&gt;</span> <span class="dt">IO</span> ()
-consumer output workerCount timeout <span class="fu">=</span> <span class="kw">do</span>
+consumer output workerCount sleep <span class="fu">=</span> <span class="kw">do</span>
     state <span class="ot">&lt;-</span> atomically <span class="fu">$</span> <span class="kw">do</span>
         <span class="co">-- use timeout to avoid busy loop</span>
-        mword <span class="ot">&lt;-</span> (<span class="kw">Just</span> <span class="fu">&lt;$&gt;</span> readTQueue output) <span class="ot">`orElse`</span> takeTMVar timeout
+        mword <span class="ot">&lt;-</span> (<span class="kw">Just</span> <span class="fu">&lt;$&gt;</span> readTQueue output) <span class="ot">`orElse`</span> takeTMVar sleep
         <span class="kw">case</span> mword <span class="kw">of</span>
         <span class="fu">...</span></code></pre>
-<p>consumer里只要改改对队列的部分，<code>readTQueue</code>和<code>takeTMVar</code>都是会阻塞的，<code>orElse</code>会选择先完成的一个。接着就是在另一个线程里定时向timeout里写Nothing，让<code>takeTMVar</code>可以定时返回：</p>
-<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">timeoutThead ::</span> <span class="dt">TMVar</span> (<span class="dt">Maybe</span> a) <span class="ot">-&gt;</span> <span class="dt">IO</span> b
-timeoutThead timeout <span class="fu">=</span> forever <span class="fu">$</span> <span class="kw">do</span>
+<p>consumer里只要改读队列的部分，<code>readTQueue</code>阻塞的时候会执行<code>retry</code>, <code>orElse</code>就会候执行<code>takeTMVar</code>。接着就是在另一个线程里定时向<code>sleep</code>里写Nothing，让<code>takeTMVar</code>可以定时返回：</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">wakeup ::</span> <span class="dt">TMVar</span> (<span class="dt">Maybe</span> a) <span class="ot">-&gt;</span> <span class="dt">IO</span> b
+wakeup sleep <span class="fu">=</span> forever <span class="fu">$</span> <span class="kw">do</span>
     threadDelay (<span class="dv">10</span><span class="fu">^</span>(<span class="dv">6</span><span class="ot">::</span><span class="dt">Int</span>))
-    atomically <span class="fu">$</span> putTMVar timeout <span class="kw">Nothing</span></code></pre>
+    atomically <span class="fu">$</span> putTMVar sleep <span class="kw">Nothing</span></code></pre>
 <p>这方法虽然不好扩展，但是处理1000个单词的时候，user时间从57秒多减少到4秒。</p>
   </section>
 
