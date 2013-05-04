@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>MgaMPKAy's - 不自不觉就习惯了</title>
+    <link rel="stylesheet" type="text/css" href="../css/default.css" />
+  </head>
+  <body>
+    <div id="header">
+      <div id="logo">
+        <a href="../">MgaMPKAy's Blog</a>
+      </div>
+      <div id="navigation">
+        <a href="../">Home</a>
+        <a href="../about.html">About</a>
+        <a href="../archive.html">Archive</a>
+      </div>
+    </div>
+
+    <div id="content">
+      <h1>不自不觉就习惯了</h1>
+
+      <article>
+  <div class="info">May  4, 2013</div>
+
+  <section>
+    <p>有些东西会在不自不觉间就习惯了</p>
+<h1 id="关机脚本">关机脚本</h1>
+<p>自己写个关机脚本，在脚本最后会用<code>sudo systemctl poweroff</code>关机，然后在bash给这个脚本给这脚本起的别名是<code>poweroff</code>。有一天手快，本来想用<code>powertop</code>的，然后不用按Tab补全成<code>poweroff</code>，之前的一两分钟里又刚好用过<code>sudo</code>，结果不小心关机了。为了避免再不小心关机，我在脚本开头加上了一个选项：</p>
+<pre class="sourceCode bash"><code class="sourceCode bash"><span class="kw">echo</span> <span class="st">&quot;Poweroff?[yes/no] &quot;</span>
+<span class="kw">select</span> <span class="kw">yn</span> in <span class="st">&quot;yes&quot;</span> <span class="st">&quot;no&quot;</span><span class="kw">;</span> <span class="kw">do</span>
+    <span class="kw">case</span> <span class="ot">$yn</span><span class="kw"> in</span>
+	<span class="st">&quot;yes&quot;</span><span class="kw">)</span> <span class="kw">break;;</span>
+	<span class="st">&quot;no&quot;</span>)
+	    <span class="kw">echo</span> <span class="st">&quot;Nothing happend&quot;</span><span class="kw">;</span> <span class="kw">exit;;</span>
+    <span class="kw">esac</span>
+<span class="kw">done</span></code></pre>
+<p>现在用这个脚本就会有提示：</p>
+<pre><code>Poweroff?[yes/no] 
+1) yes
+2) no
+#?</code></pre>
+<p>以前关机都是<code>poweroff</code>然后输入密码，现在还要有个选项选1，感觉很不习惯。最后我选项去掉，把关机部分改成：</p>
+<pre class="sourceCode bash"><code class="sourceCode bash"><span class="kw">sudo</span> -k systemctl poweroff</code></pre>
+<p>加上<code>-k</code>选项之后，<code>sudo</code>就清除之前的验证，要求输入密码。</p>
+<h1 id="xmonad布局顺序">Xmonad布局顺序</h1>
+<p>以前我用Xmonad的默认的3个布局，顺序我都没记，反正是3个，一下遍历完了。开机之后，我最常做的是开个隐身的Chromium，八卦一下之后再开一个正常的Chromium。这时Xmonad的布局是<code>Tall</code>，两个Chromium会左右分屏，然后我要按一下快捷键，切换到全屏的<code>Full</code>布局。所以我把布局顺序改了。</p>
+<p>默认的是：</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell">layout <span class="fu">=</span> tiled <span class="fu">|||</span> <span class="dt">Mirror</span> tiled <span class="fu">|||</span> <span class="dt">Full</span>
+  <span class="kw">where</span> <span class="fu">...</span></code></pre>
+<p>改成</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell">layout <span class="fu">=</span> <span class="dt">Full</span> <span class="fu">|||</span> <span class="dt">Mirror</span> tiled <span class="fu">|||</span> tiled
+  <span class="kw">where</span> <span class="fu">...</span></code></pre>
+<p>只是把<code>Full</code>移到前面而已。</p>
+<p>用了三天，发现已经习惯了以前布局切换顺序，虽然我不记得具体顺序。</p>
+<p>所以我改成：</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell">layout <span class="fu">=</span> <span class="dt">Full</span> <span class="fu">|||</span> tiled <span class="fu">|||</span> <span class="dt">Mirror</span> tiled</code></pre>
+<p>相当于默认布局顺序循环左移了，既满足开始是<code>Full</code>，布局切换的顺序也没变。</p>
+  </section>
+
+  <section id="comment">
+    <br />
+    <hr />
+    <div id="disqus_thread"></div>
+    <script type="text/javascript">
+      /* * * CONFIGURATION VARIABLES: EDIT BEFORE PASTING INTO YOUR WEBPAGE * * */
+      var disqus_shortname = 'mgampkay'; // required: replace example with your forum shortname
+
+      /* * * DON'T EDIT BELOW THIS LINE * * */
+      (function() {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+      })();
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+
+    <a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+  </section>
+
+</article>
+
+<script type="text/javascript" src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
+<script type="text/javascript">
+$(document).ready(function() {
+    // Add extra information to code blocks
+    $('code').each(function(){
+    	var title = $(this).attr("class");
+            if(title != '' && title !== undefined){
+                if(title.match('sourceCode')){
+                    var title = title.split(' ')[1];
+                };
+		$(this).before('<span class="language">'+title+'</span>');
+            }
+    });
+});
+</script>
+
+
+    </div>
+    <div id="footer">
+      @mgampkay
+    </div>
+
+    <script type="text/javascript">
+      var _gaq = _gaq || [];
+      _gaq.push(['_setAccount', 'UA-39766360-1']);
+      _gaq.push(['_setDomainName', 'github.io']);
+      _gaq.push(['_setAllowLinker', true]);
+      _gaq.push(['_trackPageview']);
+
+      (function() {
+	  var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+	  ga.src = ('https:' == document.location.protocol ? 'https://' : 'http://') + 'stats.g.doubleclick.net/dc.js';
+	  var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+      })();
+    </script>
+
+  </body>
+</html>
