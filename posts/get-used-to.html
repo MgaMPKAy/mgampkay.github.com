@@ -26,7 +26,7 @@
   <section>
     <p>有些东西会在不自不觉间就习惯了</p>
 <h1 id="关机脚本">关机脚本</h1>
-<p>自己写个关机脚本，在脚本最后会用<code>sudo systemctl poweroff</code>关机，然后在bash给这个脚本给这脚本起的别名是<code>poweroff</code>。有一天手快，本来想用<code>powertop</code>的，然后不用按Tab补全成<code>poweroff</code>，之前的一两分钟里又刚好用过<code>sudo</code>，结果不小心关机了。为了避免再不小心关机，我在脚本开头加上了一个选项：</p>
+<p>自己写个关机脚本，在脚本最后会用<code>sudo systemctl poweroff</code>关机，然后在bash给这个脚本起的别名是<code>poweroff</code>。有一天手快，本来想用<code>powertop</code>的，然后不小心用按Tab补全成<code>poweroff</code>，之前的一两分钟里又刚好用过<code>sudo</code>，结果不小心关机了。为了避免再不小心关机，我在脚本开头加上了一个选项：</p>
 <pre class="sourceCode bash"><code class="sourceCode bash"><span class="kw">echo</span> <span class="st">&quot;Poweroff?[yes/no] &quot;</span>
 <span class="kw">select</span> <span class="kw">yn</span> in <span class="st">&quot;yes&quot;</span> <span class="st">&quot;no&quot;</span><span class="kw">;</span> <span class="kw">do</span>
     <span class="kw">case</span> <span class="ot">$yn</span><span class="kw"> in</span>
@@ -36,11 +36,11 @@
     <span class="kw">esac</span>
 <span class="kw">done</span></code></pre>
 <p>现在用这个脚本就会有提示：</p>
-<pre><code>Poweroff?[yes/no] 
+<pre><code>Poweroff?[yes/no]
 1) yes
 2) no
 #?</code></pre>
-<p>以前关机都是<code>poweroff</code>然后输入密码，现在还要有个选项选1，感觉很不习惯。最后我选项去掉，把关机部分改成：</p>
+<p>以前关机都是<code>poweroff</code>然后输入密码，现在还要选1，感觉很不习惯。最后我选项去掉，把关机部分改成：</p>
 <pre class="sourceCode bash"><code class="sourceCode bash"><span class="kw">sudo</span> -k systemctl poweroff</code></pre>
 <p>加上<code>-k</code>选项之后，<code>sudo</code>就清除之前的验证，要求输入密码。</p>
 <h1 id="xmonad布局顺序">Xmonad布局顺序</h1>
