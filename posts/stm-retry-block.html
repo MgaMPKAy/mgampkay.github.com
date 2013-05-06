@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>MgaMPKAy's - STM retry坑一例</title>
+    <link rel="stylesheet" type="text/css" href="../css/default.css" />
+  </head>
+  <body>
+    <div id="header">
+      <div id="logo">
+        <a href="../">MgaMPKAy's Blog</a>
+      </div>
+      <div id="navigation">
+        <a href="../">Home</a>
+        <a href="../about.html">About</a>
+        <a href="../archive.html">Archive</a>
+      </div>
+    </div>
+
+    <div id="content">
+      <h1>STM retry坑一例</h1>
+
+      <article>
+  <div class="info">May  6, 2014</div>
+
+  <section>
+    <p>今天凌晨，用long-polling做聊天功能，服务器端直接用TChan广播:</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell">get <span class="st">&quot;/recv&quot;</span> <span class="fu">$</span> <span class="kw">do</span>
+    msg <span class="ot">&lt;-</span> liftIO <span class="fu">$</span> atomically <span class="fu">$</span>
+        c <span class="ot">&lt;-</span> dupTChan chan
+        readTChan c
+    json (<span class="ot">msg::</span><span class="dt">Message</span>)</code></pre>
+<p>我想当然的在一个<code>atomically</code>里用<code>dupTChan</code>复制一个全局的<code>TChan</code>，然后用<code>readTChan</code>读数据，最后把结果转成json返回给客户端。因为<code>readTChan</code>在<code>TChan</code>没数据的时候会阻塞直到有数据，所以这里就实现了long-polling。</p>
+<p>但是，测试的时候发现即使有向全局的chan写入数据，请求<code>/recv</code>还是会一直阻塞，检查一遍JS之后没发现问题，再看<code>TChan</code>的文档才发现问题所在。</p>
+<p><code>dupTChan</code>复制得到的<code>TChan</code>是空的，所以后面紧跟的<code>readTChan</code>一定会通过<code>retry</code>阻塞。<code>retry</code>的时候会重新执行事务，<code>dupTChan</code>又得到一个空<code>TChan</code>，然后就死循环了。Haskell的<code>retry</code>又挺厉害，不会真的在这里死循环，CPU使用也没太大变化，所以很难发现。</p>
+<p>所以这里要分成两个事务:</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell">get <span class="st">&quot;/recv&quot;</span> <span class="fu">$</span> <span class="kw">do</span>
+    c   <span class="ot">&lt;-</span> liftIO <span class="fu">$</span> atomically <span class="fu">$</span> dupTChan chan
+    msg <span class="ot">&lt;-</span> liftIO <span class="fu">$</span> atomically <span class="fu">$</span> readTChan c
+    json (<span class="ot">msg::</span><span class="dt">Message</span>)</code></pre>
+  </section>
+
+  <section id="comment">
+    <br />
+    <hr />
+    <div id="disqus_thread"></div>
+    <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+  </section>
+
+</article>
+
+<script type="text/javascript" src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
+<script type="text/javascript">
+
+var disqus_shortname = 'mgampkay';
+var disqus_loaded = false;
+function load_disqus() {
+    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+    dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+}
+
+$(document).ready(function() {
+    // Add extra information to code blocks
+    $('code').each(function(){
+    	var title = $(this).attr("class");
+            if(title != '' && title !== undefined){
+                if(title.match('sourceCode')){
+                    var title = title.split(' ')[1];
+                };
+		$(this).before('<span class="language">'+title+'</span>');
+            }
+    });
+    $(window).scroll(function(){
+        if (($(document).height()
+            - $(window).height())
+            - $(window).scrollTop() < 100){
+            if (!disqus_loaded) {
+                load_disqus();
+                disqus_loaded = true;
+            }
+        }
+    });
+});
+</script>
+
+
+    </div>
+    <div id="footer">
+      @mgampkay
+    </div>
+
+    <script type="text/javascript">
+      var _gaq = _gaq || [];
+      _gaq.push(['_setAccount', 'UA-39766360-1']);
+      _gaq.push(['_setDomainName', 'github.io']);
+      _gaq.push(['_setAllowLinker', true]);
+      _gaq.push(['_trackPageview']);
+
+      (function() {
+	  var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+	  ga.src = ('https:' == document.location.protocol ? 'https://' : 'http://') + 'stats.g.doubleclick.net/dc.js';
+	  var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+      })();
+    </script>
+
+  </body>
+</html>
