@@ -104,16 +104,24 @@ $(document).ready(function() {
 		$(this).before('<span class="language">'+title+'</span>');
             }
     });
-    $(window).scroll(function(){
-        if (($(document).height()
-            - $(window).height())
-            - $(window).scrollTop() < 100){
-            if (!disqus_loaded) {
-                load_disqus();
-                disqus_loaded = true;
+
+    var windowHeigh = $(window).height();
+    var bodyHeigh   = $("body").height();
+    if (bodyHeigh > windowHeigh) {
+        $(window).scroll(function(){
+            if (($(document).height()
+                - $(window).height())
+                - $(window).scrollTop() < 100){
+                if (!disqus_loaded) {
+                    load_disqus();
+                    disqus_loaded = true;
+                }
             }
-        }
-    });
+        });
+    } else {
+        load_disqus();
+        disqus_loaded = true;
+    }
 });
 </script>
 
