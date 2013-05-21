@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>MgaMPKAy's - 笨方法移除UTF-8 BOM</title>
+    <link rel="stylesheet" type="text/css" href="../css/default.css" />
+  </head>
+  <body>
+    <div id="header">
+      <div id="logo">
+        <a href="../">MgaMPKAy's Blog</a>
+      </div>
+      <div id="navigation">
+        <a href="../">Home</a>
+        <a href="../about.html">About</a>
+        <a href="../archive.html">Archive</a>
+      </div>
+    </div>
+
+    <div id="content">
+      <h1>笨方法移除UTF-8 BOM</h1>
+
+      <article>
+  <div class="info">May 21, 2013</div>
+
+  <section>
+    <p>前几天拿到一个系统的代码，编译编译不了，javac不支持UTF8-BOM的文件。通过一系列的笨方法干掉邪恶的BOM。</p>
+<h1 id="识别带bom的文件">识别带BOM的文件</h1>
+<p>文件这么多，万一有些不带BOM，然后我又把它处理了不就很悲剧，所以先识别出带BOM的文件。知道BOM是何物的高手自然先检查一下文件开头的几个字节，这对我来说太难了，所以我用<code>file</code>。</p>
+<pre class="sourceCode bash"><code class="sourceCode bash">$ <span class="kw">file</span> BbsCategory.java
+<span class="kw">BbsCategory.java</span>: UTF-8 Unicode (with BOM) <span class="kw">text</span>, with CRLF, LF line terminators</code></pre>
+<p>所以我们只要对全部文件用file识别一下，用grep、awk、sed过滤出全部带BOM的文件：</p>
+<pre class="sourceCode bash"><code class="sourceCode bash"><span class="kw">file</span> <span class="kw">`find</span> . -name <span class="st">&quot;*.java&quot;</span><span class="kw">`</span> \
+    <span class="kw">|</span> <span class="kw">grep</span> <span class="st">'(with BOM)'</span> \
+    <span class="kw">|</span> <span class="kw">awk</span> <span class="st">'{print $1}'</span> \
+    <span class="kw">|</span> <span class="kw">sed</span> s/:// <span class="kw">&gt;</span> hasbom</code></pre>
+<p>顺便把结果放到一个<code>hasbom</code>文件里，方便检查和进行下一步。</p>
+<h1 id="移除bom">移除BOM</h1>
+<p>我们当然可以<code>sed</code>换掉文件前4个字节，<code>sed</code>不熟所以直接用<code>tail</code>跳过前4字节就可以了</p>
+<pre class="sourceCode bash"><code class="sourceCode bash"><span class="kw">for</span> <span class="kw">i</span> in <span class="ot">$(</span><span class="kw">cat</span> hasbom<span class="ot">)</span> <span class="kw">;</span> <span class="kw">do</span>
+    <span class="kw">tail</span> --bytes=+4 <span class="ot">$i</span> <span class="kw">&gt;</span> tmp
+    <span class="kw">cp</span> tmp <span class="ot">$i</span>
+<span class="kw">done</span></code></pre>
+<p>其实就是我不会用<code>sed</code>而已。</p>
+  </section>
+
+  <section id="comment">
+    <br />
+    <hr />
+    <div id="disqus_thread"></div>
+    <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+  </section>
+
+</article>
+
+<script type="text/javascript" src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
+<script type="text/javascript">
+
+var disqus_shortname = 'mgampkay';
+var disqus_loaded = false;
+function load_disqus() {
+    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+    dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+}
+
+$(document).ready(function() {
+    // Add extra information to code blocks
+    $('code').each(function(){
+    	var title = $(this).attr("class");
+            if(title != '' && title !== undefined){
+                if(title.match('sourceCode')){
+                    var title = title.split(' ')[1];
+                };
+		$(this).before('<span class="language">'+title+'</span>');
+            }
+    });
+
+    var windowHeigh = $(window).height();
+    var bodyHeigh   = $("body").height();
+    if (bodyHeigh > windowHeigh) {
+        $(window).scroll(function(){
+            if (($(document).height()
+                - $(window).height())
+                - $(window).scrollTop() < 100){
+                if (!disqus_loaded) {
+                    load_disqus();
+                    disqus_loaded = true;
+                }
+            }
+        });
+    } else {
+        load_disqus();
+        disqus_loaded = true;
+    }
+});
+</script>
+
+
+    </div>
+    <div id="footer">
+      @mgampkay
+    </div>
+
+    <script type="text/javascript">
+      var _gaq = _gaq || [];
+      _gaq.push(['_setAccount', 'UA-39766360-1']);
+      _gaq.push(['_setDomainName', 'github.io']);
+      _gaq.push(['_setAllowLinker', true]);
+      _gaq.push(['_trackPageview']);
+
+      (function() {
+	  var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+	  ga.src = ('https:' == document.location.protocol ? 'https://' : 'http://') + 'stats.g.doubleclick.net/dc.js';
+	  var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+      })();
+    </script>
+
+  </body>
+</html>
