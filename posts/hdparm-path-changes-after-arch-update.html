@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>MgaMPKAy's - Arch升级后hdparm路径改了</title>
+    <link rel="stylesheet" type="text/css" href="../css/default.css" />
+  </head>
+  <body>
+    <div id="header">
+      <div id="logo">
+        <a href="../">MgaMPKAy's Blog</a>
+      </div>
+      <div id="navigation">
+        <a href="../">Home</a>
+        <a href="../about.html">About</a>
+        <a href="../archive.html">Archive</a>
+      </div>
+    </div>
+
+    <div id="content">
+      <h1>Arch升级后hdparm路径改了</h1>
+
+      <article>
+  <div class="info">May 22, 2013</div>
+
+  <section>
+    <p>又被Arch坑一回，今天<code>pacman -Syu</code>升级之后，再开机没有走完直接进入X的流程。</p>
+<p>用<code>journalctl</code>发现一个systemd服务没有正常执行，这个服务是当年Archlinux大举迁移到systemd的时候，我自己写的rc.local替代品。在这个服务里我用<code>hdparm</code>调一下硬盘参数，建个<code>/tmp/log</code>目录。</p>
+<pre><code>[Unit]
+Description=My rc.local replacement
+
+[Service]
+Type=oneshot
+ExecStart=/sbin/hdparm -q -S 180 /dev/sda
+ExecStart=/bin/mkdir /tmp/log -m 755
+ExecStart=/bin/chown mga /tmp/log
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target</code></pre>
+<p>升级前<code>hdparm</code>的路径是<code>/sbin/hdparm</code>，升级之后变成<code>/usr/bin/hdparm</code>，然后整个服务就挂了。我启动X的时候要用到<code>/tmp/log</code>，所以也失败了。</p>
+<p>如果不是X没正常启动，如果不是经常没事看日志，这种错误可能就被无视了。另外<code>systemd</code>虽然复杂点，还是很好用的。</p>
+  </section>
+
+  <section id="comment">
+    <br />
+    <hr />
+    <div id="disqus_thread"></div>
+    <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+  </section>
+
+</article>
+
+<script type="text/javascript" src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
+<script type="text/javascript">
+
+var disqus_shortname = 'mgampkay';
+var disqus_loaded = false;
+function load_disqus() {
+    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+    dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+}
+
+$(document).ready(function() {
+    // Add extra information to code blocks
+    $('code').each(function(){
+    	var title = $(this).attr("class");
+            if(title != '' && title !== undefined){
+                if(title.match('sourceCode')){
+                    var title = title.split(' ')[1];
+                };
+		$(this).before('<span class="language">'+title+'</span>');
+            }
+    });
+
+    var windowHeigh = $(window).height();
+    var bodyHeigh   = $("body").height();
+    if (bodyHeigh > windowHeigh) {
+        $(window).scroll(function(){
+            if (($(document).height()
+                - $(window).height())
+                - $(window).scrollTop() < 100){
+                if (!disqus_loaded) {
+                    load_disqus();
+                    disqus_loaded = true;
+                }
+            }
+        });
+    } else {
+        load_disqus();
+        disqus_loaded = true;
+    }
+});
+</script>
+
+
+    </div>
+    <div id="footer">
+      @mgampkay
+    </div>
+
+    <script type="text/javascript">
+      var _gaq = _gaq || [];
+      _gaq.push(['_setAccount', 'UA-39766360-1']);
+      _gaq.push(['_setDomainName', 'github.io']);
+      _gaq.push(['_setAllowLinker', true]);
+      _gaq.push(['_trackPageview']);
+
+      (function() {
+	  var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+	  ga.src = ('https:' == document.location.protocol ? 'https://' : 'http://') + 'stats.g.doubleclick.net/dc.js';
+	  var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+      })();
+    </script>
+
+  </body>
+</html>
