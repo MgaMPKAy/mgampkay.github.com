@@ -172,47 +172,7 @@ undefined :: Insert Two (Cons One (Cons Three Nil))
 </article>
 
 <script type="text/javascript" src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
-<script type="text/javascript">
-
-var disqus_shortname = 'mgampkay';
-var disqus_loaded = false;
-function load_disqus() {
-    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
-    dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
-    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
-}
-
-$(document).ready(function() {
-    // Add extra information to code blocks
-    $('code').each(function(){
-    	var title = $(this).attr("class");
-            if(title != '' && title !== undefined){
-                if(title.match('sourceCode')){
-                    var title = title.split(' ')[1];
-                };
-		$(this).before('<span class="language">'+title+'</span>');
-            }
-    });
-
-    var windowHeigh = $(window).height();
-    var bodyHeigh   = $("body").height();
-    if (bodyHeigh > windowHeigh) {
-        $(window).scroll(function(){
-            if (($(document).height()
-                - $(window).height())
-                - $(window).scrollTop() < 100){
-                if (!disqus_loaded) {
-                    load_disqus();
-                    disqus_loaded = true;
-                }
-            }
-        });
-    } else {
-        load_disqus();
-        disqus_loaded = true;
-    }
-});
-</script>
+<script type="text/javascript" src="../js/post.js"></script>
 
 
     </div>
@@ -220,19 +180,7 @@ $(document).ready(function() {
       @mgampkay
     </div>
 
-    <script type="text/javascript">
-      var _gaq = _gaq || [];
-      _gaq.push(['_setAccount', 'UA-39766360-1']);
-      _gaq.push(['_setDomainName', 'github.io']);
-      _gaq.push(['_setAllowLinker', true]);
-      _gaq.push(['_trackPageview']);
-
-      (function() {
-	  var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
-	  ga.src = ('https:' == document.location.protocol ? 'https://' : 'http://') + 'stats.g.doubleclick.net/dc.js';
-	  var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
-      })();
-    </script>
+    <script type="text/javascript" src="../js/ga.js"></script>
 
   </body>
 </html>
