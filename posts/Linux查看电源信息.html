@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>MgaMPKAy's - Linux查看电源信息</title>
+    <link rel="stylesheet" type="text/css" href="../css/default.css" />
+  </head>
+  <body>
+    <div id="header">
+      <div id="logo">
+        <a href="../">MgaMPKAy's Blog</a>
+      </div>
+      <div id="navigation">
+        <a href="../">Home</a>
+        <a href="../about.html">About</a>
+        <a href="../archive.html">Archive</a>
+      </div>
+    </div>
+
+    <div id="content">
+      <h1>Linux查看电源信息</h1>
+
+      <article>
+  <div class="info">May 31, 2013</div>
+
+  <section>
+    <p>忘记插A/C电源，结果电池没电然后直接关机的事情在2天里发生了三次，幸好都没干正事，所以没什么损失。</p>
+<p>开个进程或者用cron监控电池电量然后弹窗口提示还是太麻烦了，所以我现在的解决方法是在登陆的时候检查一下有没有插电源，然后提示一下就可以了。</p>
+<p>在<code>/sys/class/power_supply/</code>里可以看到供电方式：</p>
+<pre class="sourceCode bash"><code class="sourceCode bash">$ <span class="kw">ls</span> /sys/class/power_supply/
+<span class="kw">AC0</span>  BAT0</code></pre>
+<p>AC0就是我的A/C电源了。</p>
+<p>然后 <code>/sys/class/power_supply/AC0/online</code>表示是否插上电源:</p>
+<pre class="sourceCode bash"><code class="sourceCode bash">$ <span class="kw">cat</span> /sys/class/power_supply/AC0/online 
+<span class="kw">1</span></code></pre>
+<p>所以检查一下然后输出个显眼的提示就可以了：</p>
+<pre class="sourceCode bash"><code class="sourceCode bash"><span class="kw">mapfile</span> -t online <span class="kw">&lt;</span> /sys/class/power_supply/AC0/online
+
+<span class="kw">if [[</span> <span class="ot">${online[0]}</span> <span class="ot">==</span> 1<span class="kw"> ]]</span>; <span class="kw">then</span>
+    <span class="kw">printf</span> <span class="st">&quot;\e[1;31mRunning on Battery!!!\n\e[0m&quot;</span>
+<span class="kw">fi</span></code></pre>
+<p>bash的<code>mapfile</code>读文件很方便，另外<code>/sys/class/power_supply</code>还可以读到很多有用的信息，以后再看看有好玩的用法。</p>
+  </section>
+
+  <section id="comment">
+    <br />
+    <hr />
+    <div id="disqus_thread"></div>
+    <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+  </section>
+
+</article>
+
+<script type="text/javascript" src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
+<script type="text/javascript" src="../js/post.js"></script>
+
+
+    </div>
+    <div id="footer">
+      @mgampkay
+    </div>
+
+    <script type="text/javascript" src="../js/ga.js"></script>
+
+  </body>
+</html>
