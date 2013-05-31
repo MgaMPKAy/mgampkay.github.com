@@ -31,12 +31,12 @@
 <span class="kw">AC0</span>  BAT0</code></pre>
 <p>AC0就是我的A/C电源了。</p>
 <p>然后 <code>/sys/class/power_supply/AC0/online</code>表示是否插上电源:</p>
-<pre class="sourceCode bash"><code class="sourceCode bash">$ <span class="kw">cat</span> /sys/class/power_supply/AC0/online 
+<pre class="sourceCode bash"><code class="sourceCode bash">$ <span class="kw">cat</span> /sys/class/power_supply/AC0/online
 <span class="kw">1</span></code></pre>
 <p>所以检查一下然后输出个显眼的提示就可以了：</p>
 <pre class="sourceCode bash"><code class="sourceCode bash"><span class="kw">mapfile</span> -t online <span class="kw">&lt;</span> /sys/class/power_supply/AC0/online
 
-<span class="kw">if [[</span> <span class="ot">${online[0]}</span> <span class="ot">==</span> 1<span class="kw"> ]]</span>; <span class="kw">then</span>
+<span class="kw">if [[</span> <span class="ot">${online[0]}</span> <span class="ot">==</span> 0<span class="kw"> ]]</span>; <span class="kw">then</span>
     <span class="kw">printf</span> <span class="st">&quot;\e[1;31mRunning on Battery!!!\n\e[0m&quot;</span>
 <span class="kw">fi</span></code></pre>
 <p>bash的<code>mapfile</code>读文件很方便，另外<code>/sys/class/power_supply</code>还可以读到很多有用的信息，以后再看看有好玩的用法。</p>
