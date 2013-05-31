@@ -49,7 +49,7 @@
 <p>后来，我是直接操作一遍，记录下要放行URL就可以了。</p>
 <h1 id="编译">编译</h1>
 <p>用笨方法，直接编译，然后连代码一起打包成jar就可以了。</p>
-<pre><code>find com -name &quot;*.java&quot; | xargs -I file javac -g file -cp .:/tmp/tmproot/lib/*:/tmp/tmproot/webapps/ROOT/WEB-INF/lib/*
+<pre><code>javac -g -cp .:/tmp/tmproot/lib/*:/tmp/tmproot/webapps/ROOT/WEB-INF/lib/* `find com -name &quot;*.java&quot;`
 jar cf jeecms-all.jar com/</code></pre>
 <p>和代码一起打包是为了方便打包xml文件，如果忘了和hibernate用的xml一起打包，就会出现<code>XXXX is not mapped</code>的异常。用<code>-g</code>编译，是因为JEECMS用<code>@RequestMapping</code>但又不用注解指定参数的后果。</p>
 <h1 id="其他">其他</h1>
