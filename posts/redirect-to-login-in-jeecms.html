@@ -90,6 +90,38 @@
 	}
 }</code></pre>
 <p>主体参考<code>FrontContextInterceptor</code>, 因为在<code>web.xml</code>配置filter, 所以在<code>AuthFilter</code>直接用<code>WebApplicationContextUtil</code>拿到<code>ApplicationContex</code>, 再拿到判断登用用的<code>AuthenticationMng</code>,<code>CmsUserMng</code>。</p>
+<h1 id="简化">简化</h1>
+<p>像上面这样分开处理动态和静态页面略麻烦，而且验证也做多了，其实我们不需要在<code>AuthFilter</code>里拿到用户的。所以我们简化一下逻辑，把全部页面都用一个<code>AuthFilter</code>过滤。</p>
+<pre class="sourceCode java"><code class="sourceCode java"><span class="kw">public</span> <span class="kw">class</span> AuthFilter <span class="kw">implements</span> Filter {
+
+    <span class="kw">public</span> <span class="dt">void</span> <span class="fu">doFilter</span>(ServletRequest req,
+			 ServletResponse rep, FilterChain chain)
+	    <span class="kw">throws</span> ServletException, IOException {
+
+	<span class="co">// We need HttpServlet* to get access to work with HTTP</span>
+	<span class="co">// .....</span>
+	<span class="co">// Obtain beans from Spring</span>
+	<span class="co">// ....</span>
+
+	<span class="kw">if</span> (!<span class="fu">isLogined</span>(session, authMng) &amp;&amp; !<span class="fu">isAllowed</span>(request, response)) {
+	    response.<span class="fu">sendRedirect</span>(request.<span class="fu">getContextPath</span>() + <span class="st">&quot;/login.jspx&quot;</span>);
+	} <span class="kw">else</span> {
+	    chain.<span class="fu">doFilter</span>(req, rep);
+	}
+    }
+
+    <span class="co">// Check if an user is logined</span>
+    <span class="kw">private</span> <span class="fu">isLogined</span>(SessionProvider session, AuthenticationMng authMng) {
+	String authId = (String) session.<span class="fu">getAttribute</span>(request, AUTH_KEY);
+	<span class="kw">if</span> (authId == <span class="kw">null</span> || authMng.<span class="fu">retrieve</span>(authId) == <span class="kw">null</span>) {
+	    <span class="kw">return</span> <span class="kw">false</span>;
+	}
+	<span class="kw">return</span> <span class="kw">true</span>;
+    }
+
+    <span class="co">// Check if a request is allowed even if no user are logined</span>
+    <span class="kw">private</span> <span class="dt">boolean</span> <span class="fu">isAllowed</span>( <span class="co">//...</span>
+}</code></pre>
   </section>
 
   <section id="comment">

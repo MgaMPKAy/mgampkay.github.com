@@ -36,6 +36,12 @@
 <p>这样<code>fib'</code>就不是递归定义了。最后祭出<code>fix</code>：</p>
 <pre class="sourceCode haskell"><code class="sourceCode haskell">fib <span class="fu">=</span> fix fib'</code></pre>
 <p>搞定收工。</p>
+<p>Ackermann函数也没问题：</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell">ack' a <span class="dv">0</span> n <span class="fu">=</span> n <span class="fu">+</span> <span class="dv">1</span>
+ack' a m <span class="dv">0</span> <span class="fu">=</span> a (m <span class="fu">-</span> <span class="dv">1</span>) <span class="dv">1</span>
+ack' a m n <span class="fu">=</span> a (m <span class="fu">-</span> <span class="dv">1</span>) (a m (n <span class="fu">-</span> <span class="dv">1</span>))
+
+ack <span class="fu">=</span> fix ack'</code></pre>
   </section>
 
   <section id="comment">
