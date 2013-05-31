@@ -22,6 +22,7 @@ $(document).ready(function() {
             }
     });
 
+    // Load Disqus dynamically
     var windowHeigh = $(window).height();
     var bodyHeigh   = $("body").height();
     if (window.location.hostname == "127.0.0.1") {
@@ -40,4 +41,20 @@ $(document).ready(function() {
     } else {
         load_disqus();
     }
+
+    // Show full source code
+    $('pre').each(function(idx, elem) {
+
+	var scrollWidth = elem.scrollWidth;
+	var clientWidth = elem.clientWidth;
+	if (scrollWidth > clientWidth) {
+	    $(this).mouseover(function() {
+		$(this).css("width", scrollWidth);
+	    });
+	    $(this).mouseout(function() {
+		$(this).css("width", clientWidth);
+	    });
+	}
+    });
+
 });
