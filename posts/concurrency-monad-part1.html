@@ -26,16 +26,16 @@
   <section>
     <p>读了三篇论文:</p>
 <ol style="list-style-type: decimal">
-<li><p><a href="http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.39.8039">Functional Pearls: A Poor Man’s Concurrency Monad</a>: 用continuation交替执行多个“进程”实现并发，只是一种模拟，实际上只有一个进程。然后通过Monad transfermer可以为任意的Monad增加并发功能。第一次读的时候比较疑惑，因为他说思想是把任意monad的原子操作提升到concurrency monad。我看了第二篇论文再回来看就明白了。</p></li>
+<li><p><a href="http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.39.8039">Functional Pearls: A Poor Man’s Concurrency Monad</a>: 用continuation交替执行多个“进程”实现并发，只是一种模拟，实际上只有一个进程。然后通过monad transfermer可以为任意的Monad增加并发功能。第一次读的时候比较疑惑，因为他说思想是把任意monad的原子操作提升到concurrency monad。我看了第二篇论文再回来看就明白了。</p></li>
 <li><p><a href="http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.124.2927">Combining events and threads for scalable network services</a>: 在第一篇的基础上，使用多个线程实现。event-driven高效但复杂，thread相对简单，这篇论文是结合了event-driven和thread这两种模型，底层是event-driven，但是可以向上提供线程的接口。</p></li>
 <li><p><a href="http://www.australianscience.com.au/research/google/36841.pdf">Scalable I/O Event Handling for GHC</a>: 在第二篇的基础上，整合进GHC，用里面的话说就是让所以Haskell程序（员）都受益了。</p></li>
 </ol>
 <p>我觉得<a href="http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.39.8039">1</a>的核心思想有两个：</p>
 <ol style="list-style-type: decimal">
 <li>用一个代数数据类型（ADT）表示程序的执行以及可执行的操作</li>
-<li>用continuation构造上面所说的ADT, 通过Continuation Monad提供友好的接口。</li>
+<li>用continuation构造上面所说的ADT, 通过continuation monad提供友好的接口。</li>
 </ol>
-<p>Continuation是模拟并发的关键，不需要构造ADT，例如在Scheme可以用<code>call/cc</code>操作continuation，也更强大。构造ADT的这种方法不需用<code>call/cc</code>，但是只能在ADT的节点调度，但是实现简单，陷阱更少，也更好理解。(试过用call/cc实现coroutine，一小心就保存错continuation…)</p>
+<p>在Scheme可以用<code>call/cc</code>操作continuation，直接就可以模拟并发，很强大也很命令式。构造ADT的这种方法不需用<code>call/cc</code>，只能在ADT的节点调度，但是实现简单，陷阱少，也更好理解。(试过用Scheme实现coroutine，一小心就保存错continuation…)</p>
 <p>假设一个程序可以输出Ping和Pong，那就可以用下面这一个ADT表示（增加了End表示结束）：</p>
 <pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">PP</span> <span class="fu">=</span> <span class="dt">Ping</span> <span class="dt">PP</span>
         <span class="fu">|</span> <span class="dt">Pong</span> <span class="dt">PP</span>
@@ -99,7 +99,7 @@ runCO (p<span class="fu">:</span>ps) <span class="fu">=</span>
       <span class="dt">Yield</span> p1   <span class="ot">-&gt;</span> <span class="fu">putStrLn</span> <span class="st">&quot;Yield&quot;</span> <span class="fu">&gt;&gt;</span> runRR (ps <span class="fu">++</span> [p1])
       <span class="dt">Hold</span>  p1   <span class="ot">-&gt;</span> <span class="fu">putStrLn</span> <span class="st">&quot;Hold&quot;</span>  <span class="fu">&gt;&gt;</span> runCO (p1<span class="fu">:</span>ps)
       <span class="dt">IOAction</span> act p1 <span class="ot">-&gt;</span> act <span class="fu">&gt;&gt;</span> runCO (p1<span class="fu">:</span>ps)</code></pre>
-<p>到这里也就可以明白为什么第一篇论文说“任意monad的原子操作提升到concurrency monad”了。因为在遍历这课树的时候是以节点为单位的，而提升进来的操作都是树的一个节点，例如上面的IOAction就是把IO Monad里的操作提升进来。</p>
+<p>到这里也就可以明白为什么第一篇论文说“任意monad的原子操作提升到concurrency monad”了。因为在遍历这课树的时候是以节点为单位的，而提升进来的操作都是树的一个节点，例如上面的IOAction就可以看做把IO monad里的操作提升进来。</p>
 <p>到目前为止一切都还好，只是：</p>
 <ol style="list-style-type: decimal">
 <li>直接构造那个ADT有点麻烦</li>
