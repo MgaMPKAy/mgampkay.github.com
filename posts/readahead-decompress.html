@@ -24,10 +24,10 @@
   <div class="info">March 30, 2013</div>
 
   <section>
-    <p>我每天都要用个脚本从一个读取很慢U盘上解压些文件到tmpfs，以前我是这样做的：</p>
+    <p>我每天都要用个脚本从一个读取很慢的U盘上解压些文件到tmpfs，以前我是这样做的：</p>
 <pre class="shell"><code>cat /path/to/big/compressed-file &gt; /dev/null
 tar xf /path/to/big/compressed-file -C /tmp</code></pre>
-<p>我先用cat把整个文件读了，然后在解压。那是我的想法是直接tar解压就要边读边解压，CPU要等待IO，那样会很慢的，所以我先把整个文件读一遍，cache里有了这个文件之后，然后再解压，CPU就不用等那么久。也就是先把IO一次做了然后减少CPU等待。</p>
+<p>我先用cat把整个文件读了，然后再解压。那是我的想法是直接tar解压就要边读边解压，CPU要等待IO，那样会很慢的，所以我先把整个文件读一遍，cache里有了这个文件之后，然后再解压，CPU就不用等那么久。也就是先把IO一次做了然后减少CPU等待。</p>
 <p>然后今天我Linux有个readahead的系统调用，还有个同名工具，就是把文件放到cache里的，所以想把脚本里cat换掉。换之前我觉得要测试一下。</p>
 <h1 id="测试方法">测试方法</h1>
 <p>方法就是用各种方法把U盘上的一个文件解压到/tmp。</p>
@@ -38,7 +38,7 @@ tar xf /path/to/big/compressed-file -C /tmp</code></pre>
 <p>根据需要，每次测试前要把cache drop掉，避免上一次测试的影响：</p>
 <pre><code>sudo sh -c 'echo 1 &gt; /proc/sys/vm/drop_caches '</code></pre>
 <h1 id="测试结果">测试结果</h1>
-<p>cache，单独readahead:</p>
+<p>无cache，单独readahead:</p>
 <pre><code>time readahead java-7-openjdk-u7.tar.xz
 
 real	0m6.462s

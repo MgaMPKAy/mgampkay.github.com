@@ -53,7 +53,10 @@
 <p>不管有没有登陆，访问<code>/reset</code>都可以清空我的数据库然后重定向。就是因为这里的重定向有差别，我才发现这个问题。上面第一例的闭包里没有重定向所以看起来正常，实际上还是执行了。</p>
 <p>难道是cookies设错了？还是说Slim的Route Middleware不能实现短路，闭包一定会被执行？不会是Bug吧？…</p>
 <p>折腾一番之后，我看文档才发现有两个<code>redirect()</code>方法，一个是Slim对象的，一个是Response对象的。 Slim对象的<code>redirect()</code>设置HTTP Header然后通过抛异常实现短路，而Response对象只是设置一下HTTP Header。</p>
-<p>就样了。</p>
+<p>所以把重定向那句换成</p>
+<pre class="sourceCode php"><code class="sourceCode php">$app-&gt;redirect('/login', 303);</code></pre>
+<p>就OK了。</p>
+<p>嗯，就样了。</p>
   </section>
 
   <section id="comment">

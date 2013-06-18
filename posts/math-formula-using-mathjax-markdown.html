@@ -37,8 +37,7 @@ pandocOptions <span class="fu">=</span> defaultHakyllWriterOptions
     compile <span class="fu">$</span> pandocCompilerWith defaultHakyllReaderOptions pandocOptions</code></pre>
 <h1 id="step-2.-加载mathjax">Step 2. 加载MathJax</h1>
 <p>可以在模板里直接写个script标签来加载MathJax，但不是每个页面都有公式，这样就会有不必要的加载。所以我们可以加个metadata来决定是否加载。</p>
-<pre class="sourceCode haskell"><code class="sourceCode haskell">
-<span class="ot">mathJaxContext ::</span> <span class="dt">Context</span> <span class="dt">String</span>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">mathJaxContext ::</span> <span class="dt">Context</span> <span class="dt">String</span>
 mathJaxContext <span class="fu">=</span> field <span class="st">&quot;mathjax&quot;</span> <span class="fu">$</span> \item <span class="ot">-&gt;</span> <span class="kw">do</span>
     metadata <span class="ot">&lt;-</span> getMetadata (itemIdentifier item)
     <span class="kw">case</span> M.lookup <span class="st">&quot;mathjax&quot;</span> metadata <span class="kw">of</span>
@@ -47,7 +46,7 @@ mathJaxContext <span class="fu">=</span> field <span class="st">&quot;mathjax&qu
 <span class="st">                        \src=\&quot;http://cdn.mathjax.org/mathjax/latest/\</span>
 <span class="st">			\MathJax.js?config=TeX-AMS-MML_HTMLorMML\&quot;&gt;\</span>
 <span class="st">			\&lt;/script&gt;&quot;</span></code></pre>
-<p>然后在模板里加入 <code>$mathjax$</code>。 如果metadata里有 <code>mathjax</code> 这个键，就把模板里的 <code>$mathjax$</code> 换成script标签。</p>
+<p>把这个Context加到原来的Context里，然后在模板里加入 <code>$mathjax$</code>。如果metadata里有 <code>mathjax</code> 这个键，就把模板里的 <code>$mathjax$</code> 换成script标签。</p>
 <h1 id="step-3.-write-your-math-formula">Step 3. Write your math formula</h1>
 <p>这要在metadata部分加个mathjax: xxx就可以了，xxx是什么都没关系，因为我们只想要mathjax这个键。</p>
 <pre><code>---

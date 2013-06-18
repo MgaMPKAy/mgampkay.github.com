@@ -67,7 +67,7 @@
 <p>替换WordPress文章中的URL，简单的文本替换都可以这么干：</p>
 <pre class="sourceCode sql"><code class="sourceCode sql"><span class="kw">UPDATE</span> wp_posts <span class="kw">SET</span> post_content = <span class="kw">REPLACE</span> (post_content, <span class="st">'http://from.com'</span>, <span class="st">'http://to.net'</span>);</code></pre>
 <p>重设管理员密码，直接改，用MD5加密：</p>
-<pre class="sourceCode sql"><code class="sourceCode sql"><span class="kw">UPDATE</span>  wp_users <span class="kw">SET</span>  user_pass = MD5(<span class="st">'password ) WHERE  wp_users.ID = 1 LIMIT 1 ;</span></code></pre>
+<pre class="sourceCode sql"><code class="sourceCode sql"><span class="kw">UPDATE</span>  wp_users <span class="kw">SET</span>  user_pass = MD5(<span class="st">'password'</span>) <span class="kw">WHERE</span>  wp_users.ID = <span class="dv">1</span> <span class="kw">LIMIT</span> <span class="dv">1</span> ;</code></pre>
 <p>用WordPress还是要熟悉一下WP用到的表。</p>
 <h1 id="jeecms">JEECMS</h1>
 <p>JEECMS只有代码，花了不少时间下它依赖的各种jar。</p>

@@ -51,6 +51,7 @@ dfsPushPopStr strA strB
      <span class="fu">|</span> <span class="fu">otherwise</span> <span class="fu">=</span> dfsPushPopStr' strA [] pushPopTree (<span class="dv">0</span>, <span class="dv">0</span>) []
   <span class="kw">where</span>
     maxPush <span class="fu">=</span> <span class="fu">length</span> strA
+
     dfsPushPopStr' strA stack (<span class="dt">Node</span> x l r) (pushCount, popCount) currPath
         <span class="fu">|</span> popCount <span class="fu">&gt;</span> pushCount <span class="fu">||</span> popCount <span class="fu">+</span> pushCount <span class="fu">&gt;</span> <span class="dv">2</span> <span class="fu">*</span> maxPush <span class="fu">=</span> []
         <span class="fu">|</span> x <span class="fu">==</span> <span class="dt">Pop</span> <span class="fu">=</span> <span class="kw">if</span> popCount <span class="fu">+</span> <span class="dv">1</span> <span class="fu">==</span> pushCount
@@ -72,7 +73,7 @@ dfsPushPopStr strA strB
             <span class="kw">case</span> x <span class="kw">of</span>
               <span class="dt">Pop</span>  <span class="ot">-&gt;</span> (pushCount, popCount <span class="fu">+</span> <span class="dv">1</span>)
               <span class="dt">Push</span> <span class="ot">-&gt;</span> (pushCount <span class="fu">+</span> <span class="dv">1</span>, popCount)</code></pre>
-<p><code>dfsPushPopStr'</code>是本体，参数略多。</p>
+<p><code>dfsPushPopStr'</code>是本体，参数略多，就是在遍历的时候记录路径是<code>Push</code>和<code>Pop</code>的个数，根据节点进行相应的栈操作，然后继续遍历。</p>
 <h1 id="例子2换硬币问题">例子2：换硬币问题</h1>
 <p>就是换零钱，假设有足够的5角、1元、5元、10元、20元，问N元有多少种换的方法。这个问题不难，简单地递归就能求出种数。现在我要生成全部的替换方式。我本来想在原来求种数的基础上输出替换方式，失败了。然后我一棵树表示全部的替换方式，然后在树上遍历。</p>
 <pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">Tree</span> <span class="fu">=</span> <span class="dt">Tree</span> <span class="dt">Int</span> [<span class="dt">Tree</span>]

@@ -40,7 +40,7 @@
 <p>JEECMS一些模板是中文名的，用unzip解压要注意，不然会有乱码，我直接下载编译unzip 6.10b，加<code>-O CP936</code>解压。</p>
 <h1 id="重定向">重定向</h1>
 <p>我一开始以为这部分最简单，结果把<code>!=</code>写成<code>==</code>花了我不时间debug。</p>
-<p>要实现把所有为登陆的请求重定向到登陆页面，可以利用Spring的HandlerInterceptor实现。。因为自己对Spring不熟，所以直接改了JEECMSd的FrontContextInterceptor，它原来就有判断用户登陆，所以很简单就实现重定向。</p>
+<p>要实现把所有为登陆的请求重定向到登陆页面，可以利用Spring的HandlerInterceptor实现。因为自己对Spring不熟，所以直接改了JEECMSd的FrontContextInterceptor，它原来就有判断用户登陆，所以很简单就实现重定向。</p>
 <p>在重定向的时候，要注意的是有些请求不能重定向到登陆页面，例如注册页面、和找回密码等等。一开始我用grep找出可以用GET请求的URL，然后自己判断是否允许。</p>
 <p>只能GET：</p>
 <pre><code>grep -r &quot;@RequestMapping&quot; | grep GET | grep '&quot;.*\.jspx&quot;' -oh | sort  | uniq</code></pre>

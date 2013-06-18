@@ -51,7 +51,7 @@
 <p>改成</p>
 <pre class="sourceCode haskell"><code class="sourceCode haskell">layout <span class="fu">=</span> <span class="dt">Full</span> <span class="fu">|||</span> <span class="dt">Mirror</span> tiled <span class="fu">|||</span> tiled
   <span class="kw">where</span> <span class="fu">...</span></code></pre>
-<p>只是把<code>Full</code>移到前面而已。</p>
+<p>只是把<code>Full</code>和前面的<code>tiled</code>交换了而已。</p>
 <p>用了三天，发现已经习惯了以前布局切换顺序，虽然我不记得具体顺序。</p>
 <p>所以我改成：</p>
 <pre class="sourceCode haskell"><code class="sourceCode haskell">layout <span class="fu">=</span> <span class="dt">Full</span> <span class="fu">|||</span> tiled <span class="fu">|||</span> <span class="dt">Mirror</span> tiled</code></pre>

@@ -24,7 +24,7 @@
   <div class="info">April  7, 2013</div>
 
   <section>
-    <p>如果一个类型以类型作为参数，我们称之为<strong>参数化类型</strong>。例如Java中，<code>List&lt;T&gt;</code>中有类型参数<code>Int</code>，表明这是一个包含整数的列表。</p>
+    <p>如果一个类型以类型作为参数，我们称之为<strong>参数化类型</strong>。例如Java中，<code>List&lt;Int&gt;</code>中有类型参数<code>Int</code>，表明这是一个包含整数的列表。</p>
 <p>如果一个类型以值作为参数，我们就称之为<strong>依赖类型</strong> ，例如我们可以用<code>List&lt;9&gt;</code>表示一个长度为9的列表（当然Java是不支持的）。</p>
 <p>参数化类型不也依赖于其他类型吗，为什么不叫依赖类型？没办法，就这么叫的。</p>
 <p>也许你还会问这和length域为9的List对象有分别？区别就在于<code>List&lt;9&gt;</code>是个类型，可以由编译器检查。假设一个函数只接受长度为9的列表，如果使用List，你就要在函数里检查length是不是⑨。如果有依赖类型，你可以把函数声明为<code>void f(List&lt;9&gt; list)</code>，这样编译器就能检查你有没有正确使用这个函数，如果传进去的参数的类型不是<code>List&lt;9&gt;</code>，编译器就会报错，你不需要自己判断。</p>

@@ -36,7 +36,7 @@ loadFile filepath <span class="fu">=</span> <span class="kw">do</span>
     file <span class="ot">&lt;-</span> runIO <span class="fu">$</span> TIO.readFile filepath
     [<span class="fu">|</span> file <span class="fu">|</span>]</code></pre>
 <p>因为只有<code>Lift</code>类的值才能直接插进 <code>[| ... |]</code>, 但是<code>Text</code>不是<code>Lift</code>类，我试着自己实现，无果。</p>
-<p>然后我去看<code>shakespeare</code>的代码，更复杂了。最后我发现了<code>file-embed</code>，它不是直接插入<code>ByteString</code>, 而是返回了一个<code>AppE</code>表达式(<code>Exp</code>)， 在这个表达式里转换。</p>
+<p>然后我去看<code>shakespeare</code>的代码，更复杂了。最后我发现了<code>file-embed</code>，它不是直接插入<code>ByteString</code>, 而是返回了一个<code>AppE</code>表达式(类型是<code>Exp</code>)， 在这个表达式里转换。</p>
 <p>我简化一点，足够自己用：</p>
 <pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">loadFile ::</span> <span class="fu">FilePath</span> <span class="ot">-&gt;</span> <span class="dt">Q</span> <span class="dt">Exp</span>
 loadFile filepath <span class="fu">=</span> <span class="kw">do</span>

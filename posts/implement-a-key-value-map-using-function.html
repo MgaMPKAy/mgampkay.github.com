@@ -24,7 +24,7 @@
   <div class="info">April 30, 2013</div>
 
   <section>
-    <p>Map是个映射嘛，函数是映射嘛，所以实现很简单，除去类型签名就是3行：</p>
+    <p>Map是个映射嘛，函数是映射嘛，所以实现很简单（除去类型签名就是3行）：</p>
 <pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">type</span> <span class="dt">Map</span> k v <span class="fu">=</span> (k <span class="ot">-&gt;</span> <span class="dt">Maybe</span> v)
 
 <span class="ot">insert ::</span> <span class="kw">Eq</span> k <span class="ot">=&gt;</span> k <span class="ot">-&gt;</span> v <span class="ot">-&gt;</span> <span class="dt">Map</span> k v <span class="ot">-&gt;</span> <span class="dt">Map</span> k v
