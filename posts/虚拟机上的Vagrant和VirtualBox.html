@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>MgaMPKAy's - 虚拟机上的Vagrant和VirtualBox</title>
+    <link rel="stylesheet" type="text/css" href="../css/default.css" />
+  </head>
+  <body>
+    <div id="header">
+      <div id="logo">
+        <a href="../">MgaMPKAy's Blog</a>
+      </div>
+      <div id="navigation">
+        <a href="../">Home</a>
+        <a href="../about.html">About</a>
+        <a href="../archive.html">Archive</a>
+      </div>
+    </div>
+
+    <div id="content">
+      <h1>虚拟机上的Vagrant和VirtualBox</h1>
+
+      <article>
+  <div class="info">June 29, 2013</div>
+
+  <section>
+    <p>想试一下GHCJS，自己编译神麻烦，但是GHCJS有提供虚拟机镜像，而且我可以访问到学院（校）的虚拟机，所以我想在这虚拟机上再跑一个虚拟机，体验一下GHCJS。</p>
+<h1 id="安装vagrant">安装Vagrant</h1>
+<p>在<a href="http://downloads.vagrantup.com/">这里</a>选择合适的包，下载安装就可以了：</p>
+<pre><code>$ wget 'http://files.vagrantup.com/packages/7e400d00a3c5a0fdf2809c8b5001a035415a607b/vagrant_1.2.2_x86_64.rpm'
+$ yum install vagrant_1.2.2_x86_64.rpm</code></pre>
+<h1 id="安装virtualbox">安装VirtualBox</h1>
+<p>VirtualBox需要dkms和编译内核模块，所以要先装：</p>
+<pre><code>$ wget 'http://linux.dell.com/dkms/permalink/dkms-2.2.0.3-1.noarch.rpm'
+$ yum install dkms-2.2.0.3-1.noarch.rpm
+$ yum install kernel-headers kernel-devel</code></pre>
+<p>然后<a href="http://download.virtualbox.org/virtualbox/4.2.12/">这里</a>下载安装VirtualBox：</p>
+<pre><code>$ wget 'http://download.virtualbox.org/virtualbox/4.2.12/VirtualBox-4.2-4.2.12_84980_el6-1.x86_64.rpm'
+$ yum install VirtualBox-4.2-4.2.12_84980_el6-1.x86_64.rpm</code></pre>
+<p>这里安装的是<code>4.2.12</code>而不是现在最新的<code>4.2.14</code>，因为新的Vagrant跑不了，在这里花了不少时间。</p>
+<p>安装完会编译内核模块，然后失败了，只要设置<code>KERN_DIR</code>环境变量，然后重新编译就可以了：</p>
+<pre><code>$ export KERN_DIR=/usr/src/kernels/2.6.32-358.11.1.el6.x86_64
+$ /etc/init.d/vboxdrv setup</code></pre>
+<p>其实应该可以添加repo，然后直接用yum安装依赖就可以，太懒没试~ ~</p>
+<h1 id="ghcjs">GHCJS</h1>
+<p>运行：</p>
+<pre><code>$ git clone https://github.com/ghcjs/ghcjs-build.git
+$ cd ghcjs-build
+$ git checkout prebuilt
+$ vagrant up</code></pre>
+<p><code>vagrant up</code>时会出错，然后我切换到GUI直接运行虚拟机，有这样的提示：</p>
+<pre><code>... VT-x is not available...</code></pre>
+<p>不支持VT-x很正常的吧，因这个CPU本身也是被虚拟出来的。所以我们改一下Vagrantfile，在<code>config.vm.customize</code>加上<code>--hwvirtex off</code>:</p>
+<pre class="sourceCode ruby"><code class="sourceCode ruby">config.vm.customize [<span class="st">&quot;modifyvm&quot;</span>, <span class="st">:id</span>,
+                     <span class="st">&quot;--cpus&quot;</span>, <span class="dv">4</span>,
+                     <span class="st">&quot;--memory&quot;</span>, <span class="dv">1500</span>,
+                     <span class="st">&quot;--hwvirtex&quot;</span>, <span class="st">&quot;off&quot;</span>,
+                     <span class="st">&quot;--ioapic&quot;</span>, <span class="st">&quot;on&quot;</span>]</code></pre>
+<p>发现还是不行，上网一查 <a href="http://piotr.banaszkiewicz.org/blog/2012/06/10/vagrant-lack-of-hvirt/">3</a>，把<code>cpus</code>改成了1：</p>
+<pre class="sourceCode ruby"><code class="sourceCode ruby">config.vm.customize [<span class="st">&quot;modifyvm&quot;</span>, <span class="st">:id</span>,
+                     <span class="st">&quot;--cpus&quot;</span>, <span class="dv">1</span>,
+                     <span class="st">&quot;--memory&quot;</span>, <span class="dv">1500</span>,
+                     <span class="st">&quot;--hwvirtex&quot;</span>, <span class="st">&quot;off&quot;</span>,
+                     <span class="st">&quot;--ioapic&quot;</span>, <span class="st">&quot;on&quot;</span>]</code></pre>
+<p>然后<code>vagrant up</code>启动虚拟机，现在还在跑puppet安装各种包，感觉会很漫长。</p>
+  </section>
+
+  <section id="comment">
+    <br />
+    <hr />
+    <div id="disqus_thread"></div>
+    <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+  </section>
+
+</article>
+
+<script type="text/javascript" src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
+<script type="text/javascript" src="../js/post.js"></script>
+
+
+    </div>
+    <div id="footer">
+      @mgampkay
+    </div>
+
+    <script type="text/javascript" src="../js/ga.js"></script>
+
+  </body>
+</html>
