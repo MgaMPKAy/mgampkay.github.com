@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>MgaMPKAy's - 被Symbolic link和mv吓了一跳</title>
+    <link rel="stylesheet" type="text/css" href="../css/default.css" />
+  </head>
+  <body>
+    <div id="header">
+      <div id="logo">
+        <a href="../">MgaMPKAy's Blog</a>
+      </div>
+      <div id="navigation">
+        <a href="../">Home</a>
+        <a href="../about.html">About</a>
+        <a href="../archive.html">Archive</a>
+      </div>
+    </div>
+
+    <div id="content">
+      <h1>被Symbolic link和mv吓了一跳</h1>
+
+      <article>
+  <div class="info">July 20, 2013</div>
+
+  <section>
+    <p>今天在改一个Wordpress主题，路径是相当遥远：</p>
+<pre><code>~/oldu/projects/3d-printing/3d-theme/</code></pre>
+<p>为了方便测试，我在Wordpress的<code>themes</code>目录见了个符号连接到上面的路径。</p>
+<pre><code>$ ln -s ~/oldu/projects/3d-printing/3d-theme/ /path/to/wordpress/wp-content/themes/</code></pre>
+<p>一切都很好，然后我就直接在<code>themes</code>目录下的<code>3d-theme</code>工作了。我改啊改改啊改，然后我想临时移开一个文件，就移到<code>..</code>吧：</p>
+<pre><code>$ mv content-excerpt.php ..</code></pre>
+<p>我再改啊改，然后发现<code>themes</code>目录下没有content-excerpt.php，我大吃一惊，那个文件改了还没提交呢，就这样没了？</p>
+<p>折腾一翻（TestDisk什么的~. ~），我才发现那个文件原来是被移到了<code>~/oldu/projects/3d-printing/</code>，而不是我以为的<code>/path/to/wordpress/wp-content/themes/</code>。</p>
+<p>我觉得这有点怪，例如我现在有这样的目录结构</p>
+<pre><code>outer/
+├── dir1
+└── dir2
+    └── dir3 -&gt; /tmp/workspace/outer/dir1/</code></pre>
+<p>dir2里的dir3就是到dir1的符号链接，当前目录是dir3时，<code>..</code>会指向那里？</p>
+<p>简单方法是<code>ls</code>看看文件就知道了：</p>
+<pre><code>$ ls ..
+dir1  dir2</code></pre>
+<p>也就是所<code>..</code>实际上应该是outer。</p>
+<p>对比一下inode发现的确是这样的：</p>
+<pre><code>$ stat /tmp/workspace/outer/ | grep Inode
+Device: 1eh/30d	Inode: 67074       Links: 4
+
+$ stat .. | grep Inode
+Device: 1eh/30d	Inode: 67074       Links: 4</code></pre>
+<p>但是<code>cd ..</code>的时候，你会传送到dir2而不是outer，说明<code>..</code>作为cd参数时，不是作为一个目录，而是被特殊处理的。要跳到outer，加<code>-P</code>选项，但是bash里一直不行，<code>ash</code>倒是可以：</p>
+<pre><code>$ pwd
+/tmp/workspace/outer/dir2/dir3
+$ cd -P ..
+$ pwd
+/tmp/workspace/outer</code></pre>
+<p>bash里出错：</p>
+<pre><code>$ cd -P ..
+bash: cd: - : invalid option
+cd: usage: cd [-L|[-P [-e]]] [dir]</code></pre>
+<p>这是bug?</p>
+  </section>
+
+  <section id="comment">
+    <br />
+    <hr />
+    <div id="disqus_thread"></div>
+    <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+  </section>
+
+</article>
+
+<script type="text/javascript" src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
+<script type="text/javascript" src="../js/post.js"></script>
+
+
+    </div>
+    <div id="footer">
+      @mgampkay
+    </div>
+
+    <script type="text/javascript" src="../js/ga.js"></script>
+
+  </body>
+</html>
