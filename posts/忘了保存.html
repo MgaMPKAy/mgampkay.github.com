@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>MgaMPKAy's - 忘了保存</title>
+    <link rel="stylesheet" type="text/css" href="../css/default.css" />
+  </head>
+  <body>
+    <div id="header">
+      <div id="logo">
+        <a href="../">MgaMPKAy's Blog</a>
+      </div>
+      <div id="navigation">
+        <a href="../">Home</a>
+        <a href="../about.html">About</a>
+        <a href="../archive.html">Archive</a>
+      </div>
+    </div>
+
+    <div id="content">
+      <h1>忘了保存</h1>
+
+      <article>
+  <div class="info">July 24, 2013</div>
+
+  <section>
+    <p>昨天下午我继续做数据处理的小工具，最后做的差不多的时候，想休息一下，所以就<code>darcs record</code>了，关机去和舍友上B站看恋爱研究所（还是一个人看的时候好看点）。然后大概是夜宵冲凉什么的，各种愉悦。</p>
+<p>十点多的时候，准备把剩下的一个功能补完，我惊人地发现我刚才没把代码push到服务器，而刚才工作的仓库是放在tmpfs，关机就没了。还好在那之前有把代码发给师兄，损失不算大，只是到差不多凌晨两点才把代码补回去。</p>
+<p>果然在tmpfs下工作就是悲剧。</p>
+<p>很就前试过用rsync备份：</p>
+<pre class="sourceCode bash"><code class="sourceCode bash"><span class="co"># backup</span>
+<span class="kw">rsync</span> -r -v --max-size 1M --delete /tmp/workspace/ /mnt/oldu/backup/workspace/
+
+<span class="co"># restore</span>
+<span class="kw">rsync</span> -r -v /mnt/oldu/backup/workspace/ /tmp/workspace/</code></pre>
+<p>本来是准备用cron定时备份的，之后后来懒得开cron了。</p>
+<p>果然在tmpfs下工作就是悲剧。</p>
+  </section>
+
+  <section id="comment">
+    <br />
+    <hr />
+    <div id="disqus_thread"></div>
+    <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+  </section>
+
+</article>
+
+<script type="text/javascript" src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
+<script type="text/javascript" src="../js/post.js"></script>
+
+
+    </div>
+    <div id="footer">
+      @mgampkay
+    </div>
+
+    <script type="text/javascript" src="../js/ga.js"></script>
+
+  </body>
+</html>
