@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>MgaMPKAy's - 不靠谱数据库去重</title>
+    <link rel="stylesheet" type="text/css" href="../css/default.css" />
+  </head>
+  <body>
+    <div id="header">
+      <div id="logo">
+        <a href="../">MgaMPKAy's Blog</a>
+      </div>
+      <div id="navigation">
+        <a href="../">Home</a>
+        <a href="../about.html">About</a>
+        <a href="../archive.html">Archive</a>
+      </div>
+    </div>
+
+    <div id="content">
+      <h1>不靠谱数据库去重</h1>
+
+      <article>
+  <div class="info">July 28, 2013</div>
+
+  <section>
+    <p>用的是SQLite。</p>
+<p>现在有一个坑爹的表：</p>
+<pre class="sourceCode sql"><code class="sourceCode sql"><span class="kw">CREATE</span> <span class="kw">TABLE</span> <span class="ot">&quot;users&quot;</span> (
+    <span class="ot">&quot;id&quot;</span>        <span class="dt">INTEGER</span> <span class="kw">PRIMARY</span> <span class="kw">KEY</span> AUTOINCREMENT,
+    <span class="ot">&quot;company&quot;</span>   <span class="dt">VARCHAR</span>,
+    <span class="ot">&quot;province&quot;</span>  <span class="dt">VARCHAR</span>,
+    <span class="ot">&quot;city&quot;</span>      <span class="dt">VARCHAR</span>,
+    <span class="ot">&quot;name&quot;</span>      <span class="dt">VARCHAR</span>,
+     ....
+    <span class="kw">unique</span> (company, hangye, province, city, ... )
+);</code></pre>
+<p>简单来说就是一个整型ID加一大堆可空的VARCHAR，UNIQUE限制包含除ID之外全部的属性。我现在也不知道为什么UNIQUE在INSEERT 的时候没有起作用，倒是在 UPDATE 的时候有效。</p>
+<p>所以只好自己把重复的删掉，折腾一番SQL之后无果，只好换PHP～。～我手边能用的只有PHP～。～</p>
+<p>我思路很简单，把全部非主键连接起来，哈希后作为键，以ID作为值插入一个哈希表，这样重复的行就会被映射到哈希表里同一个键，相同的键插入的时候覆盖掉之前的值，这样就能等到全部要保留的ID，然后直接构造一个NOT IN的SQL语句就可以了。</p>
+<p>目测数据只会有五万条，虽然不多，但直接这么干可能构造出一个超大的SQL语句，所以是很不靠谱的方法。</p>
+<pre class="sourceCode php"><code class="sourceCode php"><span class="kw">&lt;?php</span>
+
+<span class="kw">function</span> remove_duplicate_old<span class="ot">()</span> {
+    <span class="kw">$db</span> = <span class="kw">new</span> <span class="kw">PDO</span><span class="ot">(</span><span class="st">'sqlite:db.db3'</span><span class="ot">);</span>
+
+    <span class="kw">$stm</span> = <span class="kw">$db</span>-&gt;query<span class="ot">(</span><span class="st">&quot;select * from users&quot;</span><span class="ot">);</span>
+    <span class="kw">$stm</span>-&gt;setFetchMode<span class="ot">(</span><span class="kw">PDO</span>::<span class="kw">FETCH_NUM</span><span class="ot">);</span>
+
+    <span class="kw">$hashtable</span> = <span class="ot">[];</span>
+    <span class="kw">while</span> <span class="ot">(</span><span class="kw">$row</span> = <span class="kw">$stm</span>-&gt;fetch<span class="ot">())</span> {
+        <span class="co">// hashrow返回hash后的非主键和ID</span>
+        <span class="kw">$h</span> = hashrow<span class="ot">(</span><span class="kw">$row</span><span class="ot">);</span>
+        <span class="co">// 插入到hashtable</span>
+        <span class="kw">$hashtable</span><span class="ot">[</span><span class="kw">$h</span><span class="ot">[</span><span class="st">&quot;key&quot;</span><span class="ot">]]</span> = <span class="kw">$h</span><span class="ot">[</span><span class="st">&quot;id&quot;</span><span class="ot">];</span>
+    }
+
+    <span class="co">// 构造ID列表，形如(1,2,9, -1)</span>
+    <span class="kw">$s</span> = <span class="st">&quot;&quot;</span><span class="ot">;</span>
+    <span class="kw">foreach</span> <span class="ot">(</span><span class="kw">$hashtable</span> <span class="kw">as</span> <span class="kw">$k</span> =&gt; <span class="kw">$v</span><span class="ot">)</span> {
+        <span class="kw">$s</span> = <span class="kw">$v</span> .<span class="st">&quot;,&quot;</span> .<span class="kw">$s</span><span class="ot">;</span>
+    }
+    <span class="co">// -1是为了方便，(1,2,9,) -&gt; (1,2,9, -1)</span>
+    <span class="kw">$s</span> = <span class="st">&quot;(&quot;</span>. <span class="kw">$s</span> . <span class="st">&quot; -1)&quot;</span><span class="ot">;</span>
+
+    <span class="co">// 构造完整SQL语句</span>
+    <span class="kw">$q</span> = <span class="st">&quot;delete from users where id not in &quot;</span> . <span class="kw">$s</span><span class="ot">;</span>
+
+    <span class="kw">$db</span>-&gt;<span class="fu">exec</span><span class="ot">(</span><span class="kw">$q</span><span class="ot">);</span>
+}
+
+<span class="kw">function</span> hashrow<span class="ot">(</span><span class="kw">$row</span><span class="ot">)</span> {
+    <span class="kw">$key</span> = <span class="st">&quot;&quot;</span><span class="ot">;</span>
+    <span class="kw">$len</span> = <span class="fu">sizeof</span><span class="ot">(</span><span class="kw">$row</span><span class="ot">);</span>
+
+    <span class="co">// 跳过ID，用#连接其他属性</span>
+    <span class="kw">for</span> <span class="ot">(</span><span class="kw">$i</span> = <span class="dv">1</span><span class="ot">;</span> <span class="kw">$i</span> &lt; <span class="kw">$len</span><span class="ot">;</span> <span class="kw">$i</span>++<span class="ot">)</span> {
+        <span class="kw">$key</span> = <span class="kw">$row</span><span class="ot">[</span><span class="kw">$i</span><span class="ot">]</span> . <span class="st">&quot;#&quot;</span> . <span class="kw">$key</span><span class="ot">;</span>
+    }
+    <span class="kw">return</span> <span class="fu">array</span><span class="ot">(</span>
+        <span class="st">&quot;key&quot;</span> =&gt; <span class="fu">md5</span><span class="ot">(</span><span class="kw">$key</span><span class="ot">),</span>
+        <span class="st">&quot;id&quot;</span>  =&gt; <span class="kw">$row</span><span class="ot">[</span><span class="dv">0</span><span class="ot">]</span>
+    <span class="ot">);</span>
+}</code></pre>
+<p>然后我还用了个有点区分意义的键进行分组之后再用上面的方法去重，还是不靠谱的方法。</p>
+<p>我还想过把要保留的ID发在一个临时表，这样就可以不用自己拼SQL语句了，只是想想。</p>
+<p>后来我发现用GROUP BY又可以了：</p>
+<pre class="sourceCode sql"><code class="sourceCode sql"><span class="kw">delete</span> <span class="kw">from</span> users
+    <span class="kw">where</span> <span class="kw">id</span> <span class="kw">not</span> <span class="kw">in</span>
+        (<span class="kw">select</span> <span class="kw">id</span> <span class="kw">from</span> users <span class="kw">group</span> <span class="kw">by</span> company, province, ... )</code></pre>
+<p>其实我最最初就是想这样用GROUP BY的，但是我试的时候发现不行所以才弄出上面不靠谱的方法，现在已经不知道我一开始是哪里写错了。</p>
+<p>又折腾一番之后，发现还是建临时表好，把不重复的数据复制到临时表，然后删掉原来，再复制回去。或者直接建多一个数据库，然后在两个数据库间切换，就不用复制两次了。</p>
+  </section>
+
+  <section id="comment">
+    <br />
+    <hr />
+    <div id="disqus_thread"></div>
+    <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+  </section>
+
+</article>
+
+<script type="text/javascript" src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
+<script type="text/javascript" src="../js/post.js"></script>
+
+
+    </div>
+    <div id="footer">
+      @mgampkay
+    </div>
+
+    <script type="text/javascript" src="../js/ga.js"></script>
+
+  </body>
+</html>
