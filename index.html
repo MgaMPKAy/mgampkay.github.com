@@ -1,21 +1,22 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-    <title>MgaMPKAy's - Home</title>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>MgaMPKAy's Home</title>
     <link rel="stylesheet" type="text/css" href="./css/default.css" />
   </head>
   <body>
-    <div id="header">
+    <header id="header">
       <div id="logo">
         <a href="./">MgaMPKAy's Blog</a>
       </div>
-      <div id="navigation">
+      <nav id="navigation">
         <a href="./">Home</a>
         <a href="./about.html">About</a>
         <a href="./archive.html">Archive</a>
-      </div>
-    </div>
+      </nav>
+    </header>
 
     <div id="content">
       <h1>Home</h1>
@@ -30,36 +31,39 @@
 
 <h2>最近日志</h2>
 
-<table>
+<table id="home-posts">
   <tr>
-  <td><a href="./posts/不靠谱数据库去重.html">不靠谱数据库去重</a></td>
-  <td>July 28, 2013</td>
+  <td class="post-link"><a href="./posts/不靠谱数据库去重.html">不靠谱数据库去重</a></td>
+  <td class="post-date">July 28, 2013</td>
 </tr>
 <tr>
-  <td><a href="./posts/忘了保存.html">忘了保存</a></td>
-  <td>July 24, 2013</td>
+  <td class="post-link"><a href="./posts/忘了保存.html">忘了保存</a></td>
+  <td class="post-date">July 24, 2013</td>
 </tr>
 <tr>
-  <td><a href="./posts/暑期工第二天.html">暑期工第二天</a></td>
-  <td>July 22, 2013</td>
+  <td class="post-link"><a href="./posts/暑期工第二天.html">暑期工第二天</a></td>
+  <td class="post-date">July 22, 2013</td>
 </tr>
 <tr>
-  <td><a href="./posts/暑期工第一天.html">暑期工第一天</a></td>
-  <td>July 21, 2013</td>
+  <td class="post-link"><a href="./posts/暑期工第一天.html">暑期工第一天</a></td>
+  <td class="post-date">July 21, 2013</td>
 </tr>
 <tr>
-  <td><a href="./posts/被Symbolic link和mv吓了一跳.html">被Symbolic link和mv吓了一跳</a></td>
-  <td>July 20, 2013</td>
+  <td class="post-link"><a href="./posts/被Symbolic link和mv吓了一跳.html">被Symbolic link和mv吓了一跳</a></td>
+  <td class="post-date">July 20, 2013</td>
 </tr>
 
 </table>
 
 <p><a href="./archive.html">…更多</a>
+<script type="text/javascript" src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
+<script type="text/javascript" src="./js/jquery.timeago.js"></script>
+<script type="text/javascript" src="./js/home.js"></script>
 
     </div>
-    <div id="footer">
+    <footer id="footer">
       @mgampkay
-    </div>
+    </footer>
 
     <script type="text/javascript" src="./js/ga.js"></script>
 
