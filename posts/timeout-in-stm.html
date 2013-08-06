@@ -24,7 +24,7 @@
       <article>
   <div class="info">May  1, 2013</div>
 
-  <section>
+  <section id="article-content">
     <p>今天弄一个查英语单词的小工具，给他一堆单词，从QQ词典得到每个单词的意思。我先把所有单词读进一个队列，然后用多个<code>worker</code>从队列里取单词，从QQ词典得到意思，再写到一个输出队列。同时有一个<code>consumer</code>从输出队列取单词意思再写到文件。</p>
 <p><code>consumer</code>必须要等全部<code>worker</code>都结束了才能退出，不然就会错过一些结果。所以我一个TVar变量<code>workerCount</code>记录worker的个数，每个<code>worker</code>结束的时候都会把这个变量减1，而<code>consumer</code>在输出队列为空的时候就检查<code>workerCount</code>，如果为0，那么<code>consumer</code>也可以结束了，因为这时已经没有<code>worker</code>，而且输出队列的结果也处理完了。</p>
 <p>我的第一个实现大概是这样的</p>
@@ -66,9 +66,6 @@ wakeup sleep <span class="fu">=</span> forever <span class="fu">$</span> <span c
   </section>
 
   <section id="comment">
-    <br />
-    <hr />
-    <div id="disqus_thread"></div>
     <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
   </section>
 

@@ -24,7 +24,7 @@
       <article>
   <div class="info">March 28, 2013</div>
 
-  <section>
+  <section id="article-content">
     <p>以前用Archlinux，闲着没事就看看有包升级。现在还在用“洗发水”，不过升级基本跟chromium走，只有chromium主版本号+1了才升级。</p>
 <p>这次chromium 26多了libwebp和speech-dispatcher的依赖，libwebp不到1M没啥问题，但是speech-dispatcher拖出了python3的依赖，差不多100M啊，而且我极少用python，实在不想装。</p>
 <p>看了下speech-dispatcher，发现有一个<code>--disable-python</code>选项，选上之后可能就不依赖python了，突然间我就想自己弄AUR来自己编译。一番折腾之后，还是直接把包解压出来，把<code>libspeechd.so*</code>复制到<code>/usr/lib</code>了事（chromium也被我解压到U盘，反正就是不用包管理器安装）。</p>
@@ -33,9 +33,6 @@
   </section>
 
   <section id="comment">
-    <br />
-    <hr />
-    <div id="disqus_thread"></div>
     <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
   </section>
 

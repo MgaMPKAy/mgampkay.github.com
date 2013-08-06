@@ -24,7 +24,7 @@
       <article>
   <div class="info">May 10, 2013</div>
 
-  <section>
+  <section id="article-content">
     <p>Existential quantification可以用来实现异质列表，Haskell 98虽然不支持，但是还是可以模拟一下。能不能完全模拟我还不清楚，不过实现异质列表是没问题的。</p>
 <p>思路就是把函数部分应用到数据之后（结果类型要相同）再放到一个新的data type里。</p>
 <p>Haskell 98:</p>
@@ -39,9 +39,6 @@ list <span class="fu">=</span> [mkShowBox <span class="dv">1</span>, mkShowBox <
   </section>
 
   <section id="comment">
-    <br />
-    <hr />
-    <div id="disqus_thread"></div>
     <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
   </section>
 

@@ -24,7 +24,7 @@
       <article>
   <div class="info">May 22, 2013</div>
 
-  <section>
+  <section id="article-content">
     <p>又被Arch坑一回，今天<code>pacman -Syu</code>升级之后，再开机没有走完直接进入X的流程。</p>
 <p>用<code>journalctl</code>发现一个systemd服务没有正常执行，这个服务是当年Archlinux大举迁移到systemd的时候，我自己写的rc.local替代品。在这个服务里我用<code>hdparm</code>调一下硬盘参数，建个<code>/tmp/log</code>目录。</p>
 <pre><code>[Unit]
@@ -44,9 +44,6 @@ WantedBy=multi-user.target</code></pre>
   </section>
 
   <section id="comment">
-    <br />
-    <hr />
-    <div id="disqus_thread"></div>
     <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
   </section>
 

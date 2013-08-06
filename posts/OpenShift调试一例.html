@@ -24,7 +24,7 @@
       <article>
   <div class="info">April 17, 2013</div>
 
-  <section>
+  <section id="article-content">
     <p>最近做了个贝叶斯算法的演示，在本机跑的很好，一放到OpenShift上就一直503错误。</p>
 <p>ssh上去，看到程序已经在运行，想也没想我就把它<code>kill</code>了，然后自己重新运行，发现又可以了，不解。但是每次都有自己ssh上去运行，太麻烦了，而且就这样妥协了感觉不爽。</p>
 <p>用<code>strace</code>跟踪了一下，发现一直在读<code>/usr/lib/gconv/UTF-32.so</code>，读了又关，读了又关，不断循环。而在本机测试的时候和用ssh手动运行都不会读这个文件。我想问题应该和locate有关，应该有办法让它不读那个文件。</p>
@@ -36,9 +36,6 @@
   </section>
 
   <section id="comment">
-    <br />
-    <hr />
-    <div id="disqus_thread"></div>
     <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
   </section>
 

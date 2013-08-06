@@ -24,7 +24,7 @@
       <article>
   <div class="info">June 12, 2013</div>
 
-  <section>
+  <section id="article-content">
     <p>读了三篇论文:</p>
 <ol style="list-style-type: decimal">
 <li><p><a href="http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.39.8039">Functional Pearls: A Poor Man’s Concurrency Monad</a>: 用continuation交替执行多个“进程”实现并发，只是一种模拟，实际上只有一个进程。然后通过monad transfermer可以为任意的Monad增加并发功能。第一次读的时候比较疑惑，因为他说思想是把任意monad的原子操作提升到concurrency monad。我看了第二篇论文再回来看就明白了。</p></li>
@@ -111,9 +111,6 @@ runCO (p<span class="fu">:</span>ps) <span class="fu">=</span>
   </section>
 
   <section id="comment">
-    <br />
-    <hr />
-    <div id="disqus_thread"></div>
     <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
   </section>
 

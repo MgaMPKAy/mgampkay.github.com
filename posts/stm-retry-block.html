@@ -24,7 +24,7 @@
       <article>
   <div class="info">May  6, 2013</div>
 
-  <section>
+  <section id="article-content">
     <p>今天凌晨，用long-polling做聊天功能，服务器端直接用TChan广播:</p>
 <pre class="sourceCode haskell"><code class="sourceCode haskell">get <span class="st">&quot;/recv&quot;</span> <span class="fu">$</span> <span class="kw">do</span>
     msg <span class="ot">&lt;-</span> liftIO <span class="fu">$</span> atomically <span class="fu">$</span>
@@ -42,9 +42,6 @@
   </section>
 
   <section id="comment">
-    <br />
-    <hr />
-    <div id="disqus_thread"></div>
     <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
   </section>
 

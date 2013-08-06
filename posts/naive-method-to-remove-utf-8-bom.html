@@ -24,7 +24,7 @@
       <article>
   <div class="info">May 21, 2013</div>
 
-  <section>
+  <section id="article-content">
     <p>前几天拿到一个系统的代码，编译编译不了，javac不支持UTF8-BOM的文件。通过一系列的笨方法干掉邪恶的BOM。</p>
 <h1 id="识别带bom的文件">识别带BOM的文件</h1>
 <p>文件这么多，万一有些不带BOM，然后我又把它处理了不就很悲剧，所以先识别出带BOM的文件。知道BOM是何物的高手自然先检查一下文件开头的几个字节，这对我来说太难了，所以我用<code>file</code>。</p>
@@ -46,9 +46,6 @@
   </section>
 
   <section id="comment">
-    <br />
-    <hr />
-    <div id="disqus_thread"></div>
     <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
   </section>
 
