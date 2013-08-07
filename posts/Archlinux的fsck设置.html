@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>MgaMPKAy's Archlinux的fsck设置</title>
+    <link rel="stylesheet" type="text/css" href="../css/default.css" />
+  </head>
+  <body>
+    <header id="header">
+      <div id="logo">
+        <a href="../">MgaMPKAy's Blog</a>
+      </div>
+      <nav id="navigation">
+        <a href="../">Home</a>
+        <a href="../about.html">About</a>
+        <a href="../archive.html">Archive</a>
+      </nav>
+    </header>
+
+    <div id="content">
+      <h1>Archlinux的fsck设置</h1>
+
+      <article>
+  <div class="info">August  7, 2013</div>
+
+  <section id="article-content">
+    <p>今天升级之后，开机发现有下面这个警告：</p>
+<pre><code>********************** WARNING **********************
+*                                                   *
+*  The root device is not configured to be mounted  *
+*  read-write! It may be fsck'd again later.        *
+*                                                   *
+*****************************************************</code></pre>
+<p>和fsck相关的配置都是半年之前设置的，我快都忘记是为什么了：</p>
+<ol style="list-style-type: decimal">
+<li>mkinitcpio.conf的HOOKS里没有fsck，但是BINARIES有fsck和fsck.ext4</li>
+<li>fstab里的passno全是0</li>
+<li>systemd的fsck设置都是默认的</li>
+<li>没有设置fsck.mode（默认auto）</li>
+</ol>
+<p>效果是每次启动都fsck一次root分区。</p>
+<p>现在启动时fsck流程是这样的：</p>
+<ol style="list-style-type: decimal">
+<li>执行initramfs里的init</li>
+<li>init里会调用init_functions里的<code>fsck_root</code>函数</li>
+<li><code>fsck_root</code>会调用<code>fsck_device</code>函数，因为我的BINARIES里有fsck，所以会对根分区进行一次fsck。</li>
+<li>回到<code>fsck_root</code>，因为之前fsck成功了，而且不是用rw挂载，所以显示个警告要我改设置，免得systemd再fsck一次。</li>
+</ol>
+<p>也就是说现在只要在bootloader里加上rw就可以干掉警告了，而且现在grub默认就有加rw，所以我重新grub.cfg设置就搞定了：</p>
+<pre class="sourceCode bash"><code class="sourceCode bash"><span class="kw">sudo</span> grub-mkconfig -o /boot/grub/grub.cfg</code></pre>
+<h1 id="fsck和fstab的关系">fsck和fstab的关系</h1>
+<p>fstab的第六栏fs_passno和fsck是什么关系呢？以前我以为只要设成0那fsck就不会检查，但是我上面全都设置成0了，还是会检查根分区啊。</p>
+<p>原来fstab只有在fsck没有参数指定分区时才会有效，<code>fsck_device</code>里执行fsck的时候是指定了分区的，所以fstab的设置在这是没效的。</p>
+<p>如果像这样运行fsck，fsck就会根据fstab里的设置来检查分区：</p>
+<pre class="sourceCode bash"><code class="sourceCode bash"><span class="kw">sudo</span> fsck</code></pre>
+<h1 id="参考">参考</h1>
+<ol style="list-style-type: decimal">
+<li><a href="https://bbs.archlinux.org/viewtopic.php?id=167153/">论坛上的讨论</a>，见6楼开发者解答</li>
+<li><a href="https://projects.archlinux.org/mkinitcpio.git/tree/init_functions?id=449b3e543c">init_function</a></li>
+</ol>
+<p>ps: 现在大部分系统设置都是在半年之前弄的，当时也没记录下设置的原因，就是觉得有用就加上，现在很多都忘了原因了，找一天要重新整理一下。</p>
+  </section>
+
+  <section id="comment">
+    <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+  </section>
+
+</article>
+
+<script type="text/javascript" src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
+<script type="text/javascript" src="../js/post.js"></script>
+
+
+    </div>
+    <footer id="footer">
+      @mgampkay
+    </footer>
+
+    <script type="text/javascript" src="../js/ga.js"></script>
+
+  </body>
+</html>
