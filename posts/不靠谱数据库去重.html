@@ -36,7 +36,7 @@
      ....
     <span class="kw">unique</span> (company, hangye, province, city, ... )
 );</code></pre>
-<p>简单来说就是一个整型ID加一大堆可空的VARCHAR，UNIQUE限制包含除ID之外全部的属性。我现在也不知道为什么UNIQUE在INSEERT 的时候没有起作用，倒是在 UPDATE 的时候有效。</p>
+<p>简单来说就是一个整型ID加一大堆可空的VARCHAR，UNIQUE限制包含除ID之外全部的属性。我现在也不知道为什么UNIQUE在INSEERT 的时候没有起作用，倒是在 UPDATE 的时候有效（后来我知道那是因为NULL != NULL）。</p>
 <p>所以只好自己把重复的删掉，折腾一番SQL之后无果，只好换PHP～。～我手边能用的只有PHP～。～</p>
 <p>我思路很简单，把全部非主键连接起来，哈希后作为键，以ID作为值插入一个哈希表，这样重复的行就会被映射到哈希表里同一个键，相同的键插入的时候覆盖掉之前的值，这样就能等到全部要保留的ID，然后直接构造一个NOT IN的SQL语句就可以了。</p>
 <p>目测数据只会有五万条，虽然不多，但直接这么干可能构造出一个超大的SQL语句，所以是很不靠谱的方法。</p>
@@ -56,13 +56,9 @@
         <span class="kw">$hashtable</span><span class="ot">[</span><span class="kw">$h</span><span class="ot">[</span><span class="st">&quot;key&quot;</span><span class="ot">]]</span> = <span class="kw">$h</span><span class="ot">[</span><span class="st">&quot;id&quot;</span><span class="ot">];</span>
     }
 
-    <span class="co">// 构造ID列表，形如(1,2,9, -1)</span>
-    <span class="kw">$s</span> = <span class="st">&quot;&quot;</span><span class="ot">;</span>
-    <span class="kw">foreach</span> <span class="ot">(</span><span class="kw">$hashtable</span> <span class="kw">as</span> <span class="kw">$k</span> =&gt; <span class="kw">$v</span><span class="ot">)</span> {
-        <span class="kw">$s</span> = <span class="kw">$v</span> .<span class="st">&quot;,&quot;</span> .<span class="kw">$s</span><span class="ot">;</span>
-    }
-    <span class="co">// -1是为了方便，(1,2,9,) -&gt; (1,2,9, -1)</span>
-    <span class="kw">$s</span> = <span class="st">&quot;(&quot;</span>. <span class="kw">$s</span> . <span class="st">&quot; -1)&quot;</span><span class="ot">;</span>
+    <span class="co">// 构造ID列表，形如(1,2,9)</span>
+    <span class="kw">$ids</span> = <span class="fu">join</span><span class="ot">(</span><span class="st">&quot;,&quot;</span><span class="ot">,</span> <span class="fu">array_values</span><span class="ot">(</span><span class="kw">$hashtable</span><span class="ot">));</span>
+    <span class="kw">$s</span> = <span class="st">&quot;(&quot;</span>. <span class="kw">$s</span> . <span class="st">&quot;)&quot;</span><span class="ot">;</span>
 
     <span class="co">// 构造完整SQL语句</span>
     <span class="kw">$q</span> = <span class="st">&quot;delete from users where id not in &quot;</span> . <span class="kw">$s</span><span class="ot">;</span>
@@ -71,15 +67,10 @@
 }
 
 <span class="kw">function</span> hashrow<span class="ot">(</span><span class="kw">$row</span><span class="ot">)</span> {
-    <span class="kw">$key</span> = <span class="st">&quot;&quot;</span><span class="ot">;</span>
-    <span class="kw">$len</span> = <span class="fu">sizeof</span><span class="ot">(</span><span class="kw">$row</span><span class="ot">);</span>
-
     <span class="co">// 跳过ID，用#连接其他属性</span>
-    <span class="kw">for</span> <span class="ot">(</span><span class="kw">$i</span> = <span class="dv">1</span><span class="ot">;</span> <span class="kw">$i</span> &lt; <span class="kw">$len</span><span class="ot">;</span> <span class="kw">$i</span>++<span class="ot">)</span> {
-        <span class="kw">$key</span> = <span class="kw">$row</span><span class="ot">[</span><span class="kw">$i</span><span class="ot">]</span> . <span class="st">&quot;#&quot;</span> . <span class="kw">$key</span><span class="ot">;</span>
-    }
+	<span class="kw">$key</span> = <span class="fu">md5</span><span class="ot">(</span><span class="fu">join</span><span class="ot">(</span><span class="st">&quot;#&quot;</span><span class="ot">,</span> <span class="fu">array_slice</span><span class="ot">(</span><span class="kw">$row</span><span class="ot">,</span> <span class="dv">1</span><span class="ot">)));</span>
     <span class="kw">return</span> <span class="fu">array</span><span class="ot">(</span>
-        <span class="st">&quot;key&quot;</span> =&gt; <span class="fu">md5</span><span class="ot">(</span><span class="kw">$key</span><span class="ot">),</span>
+        <span class="st">&quot;key&quot;</span> =&gt; <span class="kw">$key</span><span class="ot">,</span>
         <span class="st">&quot;id&quot;</span>  =&gt; <span class="kw">$row</span><span class="ot">[</span><span class="dv">0</span><span class="ot">]</span>
     <span class="ot">);</span>
 }</code></pre>
