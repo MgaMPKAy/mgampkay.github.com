@@ -36,14 +36,14 @@ $(document).ready(function() {
         $(window).scroll(function(){
             if (($(document).height()
                 - $(window).height())
-                - $(window).scrollTop() < 100){
+                - $(window).scrollTop() < 500){
                 if (!disqus_loaded) {
                     load_disqus();
                 }
             }
         });
     } else {
-        load_disqus();
+        setTimeout(load_disqus, 3000);
     }
 
     // Show full source code
