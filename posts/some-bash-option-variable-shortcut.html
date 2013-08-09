@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>MgaMPKAy's 几个有用的Bash选项、变量和快捷建</title>
+    <link rel="stylesheet" type="text/css" href="../css/default.css" />
+  </head>
+  <body>
+    <header id="header">
+      <div id="logo">
+        <a href="../">MgaMPKAy's Blog</a>
+      </div>
+      <nav id="navigation">
+        <a href="../">Home</a>
+        <a href="../about.html">About</a>
+        <a href="../archive.html">Archive</a>
+      </nav>
+    </header>
+
+    <div id="content">
+      <h1>几个有用的Bash选项、变量和快捷建</h1>
+
+      <article>
+  <div class="info">August  9, 2013</div>
+
+  <section id="article-content">
+    <h1 id="选项">选项</h1>
+<p>今天在Bash Hackers上看到的一个[bash选项列表]，有一些对我来说还是很方便的，用<code>shopt -s</code>开启，<code>shopt -u</code>关闭。</p>
+<h2 id="globstar">globstar</h2>
+<p>开启之后，用<code>**</code>就可以递归目录，我再也不羡慕zsh的<code>**</code>了。</p>
+<h2 id="histappend">histappend</h2>
+<p>开启之后，命令历史会追加到$HISTFILE（默认<code>~/.bash_history</code>）后面而不是覆盖。没开启的时候，最后关闭的一个bash会把它的历史记录写到<code>~/.bash_history</code>，之前的其他bash的历史记录就没了。所以开了多个bash的时候，又想保留全部的记录的时候就很有用。</p>
+<h2 id="checkhash">checkhash</h2>
+<p>因为我的PATH里的可执行文件经常增删和覆盖，所以时不时我要<code>hash -r</code>一下，开了这个选项之后，会先检查文件是否存在，然后再执行。</p>
+<h2 id="autocd">autocd</h2>
+<p>输入目录路径后直接<code>cd</code>过去，其实不是特别常用，我的<code>cd</code>是个alias：</p>
+<pre class="sourceCode bash"><code class="sourceCode bash"><span class="kw">alias</span> cd=cdls
+<span class="kw">function</span><span class="fu"> cdls()</span> <span class="kw">{</span>
+    <span class="kw">if [[</span> <span class="ot">-z</span> <span class="st">&quot;</span><span class="ot">$1</span><span class="st">&quot;</span><span class="kw"> ]]</span>; <span class="kw">then</span>
+	<span class="kw">command</span> cd /tmp/workspace <span class="kw">&amp;&amp;</span> <span class="kw">ls</span>
+    <span class="kw">else</span>
+	<span class="kw">command</span> cd <span class="st">&quot;</span><span class="ot">$*</span><span class="st">&quot;</span> <span class="kw">&amp;&amp;</span> <span class="kw">ls</span>
+    <span class="kw">fi</span>
+<span class="kw">}</span></code></pre>
+<p><code>cd</code>之后会直接<code>ls</code>。输入目录路径直接<code>cd</code>是不会触发这个alias的。</p>
+<h2 id="no_empty_cmd_completion">no_empty_cmd_completion</h2>
+<p>纯强迫症。</p>
+<h1 id="变量">变量</h1>
+<h2 id="histcontrol">HISTCONTROL</h2>
+<p>设成<code>erasedups</code>，保存历史记录时会清除之前相同的记录。设成<code>ignoreboth</code>，不保存空白的命令，不保存和前一条历史记录相同的命令。我是设成<code>ignoreboth</code>，<code>erasedups</code>的话会看不出上下文。</p>
+<h2 id="histtimeformat">HISTTIMEFORMAT</h2>
+<p>设置之后历史记录会保存timestamp，<code>history</code>会按指定的格式显示时间和命令。我用<code>'%F %T  '</code>。</p>
+<pre class="sourceCode bash"><code class="sourceCode bash">   <span class="kw">...</span>
+  <span class="kw">480</span>  2013-08-09 22:33:01  source /tmp/oldu/projects/server.alias
+  <span class="kw">481</span>  2013-08-09 22:33:03  ssh
+  <span class="kw">482</span>  2013-08-09 22:49:28  ls
+   <span class="kw">...</span></code></pre>
+<h1 id="快捷键">快捷键</h1>
+<h2 id="c-x">C-x *</h2>
+<p>展开<em>和</em>*。</p>
+<h1 id="参考">参考</h1>
+<ol style="list-style-type: decimal">
+<li><a href="http://wiki.bash-hackers.org/internals/shell_options">bash选项列表</a></li>
+</ol>
+  </section>
+
+  <section id="comment">
+    <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+  </section>
+
+</article>
+
+<script type="text/javascript" src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
+<script type="text/javascript" src="../js/post.js"></script>
+
+
+    </div>
+    <footer id="footer">
+      @mgampkay
+    </footer>
+
+    <script type="text/javascript" src="../js/ga.js"></script>
+
+  </body>
+</html>
