@@ -26,7 +26,7 @@
 
   <section id="article-content">
     <h1 id="选项">选项</h1>
-<p>今天在Bash Hackers上看到的一个[bash选项列表]，有一些对我来说还是很方便的，用<code>shopt -s</code>开启，<code>shopt -u</code>关闭。</p>
+<p>今天在Bash Hackers上看到的一个<a href title="http://wiki.bash-hackers.org/internals/shell_options">bash选项列表</a>，有一些对我来说还是很方便的，用<code>shopt -s</code>开启，<code>shopt -u</code>关闭。</p>
 <h2 id="globstar">globstar</h2>
 <p>开启之后，用<code>**</code>就可以递归目录，我再也不羡慕zsh的<code>**</code>了。</p>
 <h2 id="histappend">histappend</h2>
@@ -51,18 +51,35 @@
 <p>设成<code>erasedups</code>，保存历史记录时会清除之前相同的记录。设成<code>ignoreboth</code>，不保存空白的命令，不保存和前一条历史记录相同的命令。我是设成<code>ignoreboth</code>，<code>erasedups</code>的话会看不出上下文。</p>
 <h2 id="histtimeformat">HISTTIMEFORMAT</h2>
 <p>设置之后历史记录会保存timestamp，<code>history</code>会按指定的格式显示时间和命令。我用<code>'%F %T  '</code>。</p>
-<pre class="sourceCode bash"><code class="sourceCode bash">   <span class="kw">...</span>
+<pre class="sourceCode bash"><code class="sourceCode bash">  <span class="kw">...</span>
   <span class="kw">480</span>  2013-08-09 22:33:01  source /tmp/oldu/projects/server.alias
   <span class="kw">481</span>  2013-08-09 22:33:03  ssh
   <span class="kw">482</span>  2013-08-09 22:49:28  ls
-   <span class="kw">...</span></code></pre>
+  <span class="kw">...</span></code></pre>
 <h1 id="快捷键">快捷键</h1>
-<h2 id="c-x">C-x *</h2>
-<p>展开<em>和</em>*。</p>
-<h1 id="参考">参考</h1>
-<ol style="list-style-type: decimal">
-<li><a href="http://wiki.bash-hackers.org/internals/shell_options">bash选项列表</a></li>
-</ol>
+<p>从bash的man page，Readline部分看到的，有很多。</p>
+<table>
+<thead>
+<tr class="header">
+<th align="left">快捷建</th>
+<th align="left">功能</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">C-x *</td>
+<td align="left">展开<code>*</code>和<code>**</code></td>
+</tr>
+<tr class="even">
+<td align="left">M-/</td>
+<td align="left">补全文件名</td>
+</tr>
+<tr class="odd">
+<td align="left">M-!</td>
+<td align="left">补全命令</td>
+</tr>
+</tbody>
+</table>
   </section>
 
   <section id="comment">
