@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>MgaMPKAy's 结束不了的sync</title>
+    <link rel="stylesheet" type="text/css" href="../css/default.css" />
+  </head>
+  <body>
+    <header id="header">
+      <div id="logo">
+        <a href="../">MgaMPKAy's Blog</a>
+      </div>
+      <nav id="navigation">
+        <a href="../">Home</a>
+        <a href="../about.html">About</a>
+        <a href="../archive.html">Archive</a>
+      </nav>
+    </header>
+
+    <div id="content">
+      <h1>结束不了的sync</h1>
+
+      <article>
+  <div class="info">August 16, 2013</div>
+
+  <section id="article-content">
+    <p>昨天晚上往U盘里拷个视频，然后<code>sync</code>一下准备关机，但是<code>sync</code>一直都没有结束，<code>kill -9</code>都不行。<code>lsof</code>一看发现<code>sync</code>打开了U盘上的一个目录，<code>strace</code>也没什么结果，<code>htop</code>显示状态是<code>D</code>，说明<code>sync</code>在一个系统调用上阻塞了。</p>
+<p>看来我的U盘快完蛋了，重启之后<code>fsck</code>一下继续用。今天Chromium也崩溃了两次，swap一下用了90%。</p>
+<h3 id="参考">参考</h3>
+<p><a href="http://unix.stackexchange.com/questions/5642/what-if-kill-9-does-not-work">What if ‘kill -9’ does not work?</a></p>
+  </section>
+
+  <section id="comment">
+    <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+  </section>
+
+</article>
+
+<script type="text/javascript" src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
+<script type="text/javascript" src="../js/post.js"></script>
+
+
+    </div>
+    <footer id="footer">
+      @mgampkay
+    </footer>
+
+    <script type="text/javascript" src="../js/ga.js"></script>
+
+  </body>
+</html>
