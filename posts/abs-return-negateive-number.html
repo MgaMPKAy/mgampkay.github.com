@@ -56,6 +56,8 @@ Falsifiable. Counter-example:
          return -x</code></pre>
 <p>如果Whiley的<code>int</code>和机器字对应，那么<code>abs</code>就会遇到上面的问题，即<code>ensures $ &gt;= 0</code>是无法成立的，如果上面定义能通过，那就说明Whiley用的自动定理证明还不完善。而事实上，Whiley的<code>int</code>是任意长度的，完全避免了这个问题（可能有性能消耗）。</p>
 <p>最后这变成个选择问题。要性能、数字不大就用和机器字对应的，必要的时候要自己检查。数字很大就牺牲点性能用不限长度的的。</p>
+<hr />
+<p>2013-08-22: 才发现，其实用一个符号位加一个正整数就可以了～～</p>
   </section>
 
   <section id="comment">

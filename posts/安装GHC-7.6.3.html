@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>MgaMPKAy's 安装GHC 7.6</title>
+    <link rel="stylesheet" type="text/css" href="../css/default.css" />
+  </head>
+  <body>
+    <header id="header">
+      <div id="logo">
+        <a href="../">MgaMPKAy's Blog</a>
+      </div>
+      <nav id="navigation">
+        <a href="../">Home</a>
+        <a href="../about.html">About</a>
+        <a href="../archive.html">Archive</a>
+      </nav>
+    </header>
+
+    <div id="content">
+      <h1>安装GHC 7.6</h1>
+
+      <article>
+  <div class="info">August 25, 2013</div>
+
+  <section id="article-content">
+    <p>纯粹记录一下流程。</p>
+<h3 id="下载ghc">1. 下载GHC</h3>
+<p>没什么特别的，到<a href="http://www.haskell.org/ghc/download_ghc_7_6_3">这里</a>找到下载地址，然后下载。</p>
+<pre class="sourceCode bash"><code class="sourceCode bash"><span class="ot">SRC=</span>http://www.haskell.org/ghc/dist/7.6.3/ghc-7.6.3-x86_64-unknown-linux.tar.bz2
+<span class="kw">aria2c</span> -j 10 -s 10 -x 10 -Z --min-split-size=10M  <span class="ot">$SRC</span></code></pre>
+<p>不到两分钟就下好了。</p>
+<h3 id="安装ghc">2. 安装GHC</h3>
+<p>没什么可设置的，设置prefix改变安装路径。</p>
+<pre class="sourceCode bash"><code class="sourceCode bash"><span class="kw">tar</span> xf ghc-7.6.3-x86_64-unknown-linux.tar.bz2
+<span class="kw">cd</span> ghc-7.6.3
+<span class="kw">./configure</span> --prefix  ~/.opt
+<span class="kw">make</span> install</code></pre>
+<p>记得把<code>${prefix}/bin</code>加<code>PATH</code>。</p>
+<h3 id="安装cabal-install">3. 安装cabal-install</h3>
+<p>到Hackage下载安装</p>
+<pre class="sourceCode bash"><code class="sourceCode bash"><span class="ot">SRC=</span>http://hackage.haskell.org/packages/archive/cabal-install/1.16.0.2/cabal-install-1.16.0.2.tar.gz
+<span class="kw">aria2c</span> <span class="ot">$SRC</span>
+<span class="kw">tar</span> xf cabal-install-1.16.0.2.tar.gz
+<span class="kw">cd</span> cabal-install-1.16.0.2
+<span class="kw">chmod</span> u+x bootstrap.sh
+<span class="kw">./bootstrap.sh</span></code></pre>
+<p>过一段时间就可以了。完了之后可以把<code>~/.cabal/bin</code>加到<code>PATH</code>。</p>
+<h3 id="纯折腾编译ghc-head">4. （纯折腾）编译GHC HEAD</h3>
+<p>照着<a href="http://ghc.haskell.org/trac/ghc/wiki/Newcomers#Firststeps">Resources for newcomers to GHC</a>做就可以了，中间有一步设置<code>BuildFlavour</code>的，我用了<code>quick</code>，编译<code>dph</code>的时候出错了，直接删掉<code>libraries/dph</code>。大约30分钟完成<sup><a href="#fn1" class="footnoteRef" id="fnref1">1</a></sup>。</p>
+<pre class="sourceCode bash"><code class="sourceCode bash">$ <span class="kw">./inplace/bin/ghc-stage2</span> --version
+<span class="kw">The</span> Glorious Glasgow Haskell Compilation System, version 7.7.20130824</code></pre>
+<p><code>make binary-dist</code>还能打包， 不到50M。</p>
+<p>编译的时候我还去看<a href="http://www.aosabook.org/en/ghc.html">The Glasgow Haskell Compiler</a>。</p>
+<h3 id="事后感觉">事后感觉</h3>
+<p>今天凌晨编译了ocaml，和ghc相比，还是小巧很多。GHC提供预编译好的包倒是很不错，可以方便地安装到其他路径。</p>
+<div class="footnotes">
+<hr />
+<ol>
+<li id="fn1"><p>用<code>quickest</code>也是差不多30分钟就能编译好，但是库没有优化。<a href="#fnref1">↩</a></p></li>
+</ol>
+</div>
+  </section>
+
+  <section id="comment">
+    <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+  </section>
+
+</article>
+
+<script type="text/javascript" src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
+<script type="text/javascript" src="../js/post.js"></script>
+
+
+    </div>
+    <footer id="footer">
+      @mgampkay
+    </footer>
+
+    <script type="text/javascript" src="../js/ga.js"></script>
+
+  </body>
+</html>

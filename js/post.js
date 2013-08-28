@@ -26,24 +26,16 @@ $(document).ready(function() {
             }
     });
 
-    // Load Disqus dynamically
+    // Load Disqus
     var windowHeigh = $(window).height();
     var bodyHeigh   = $("body").height();
     if (window.location.hostname == "127.0.0.1") {
         disqus_loaded = true;
     }
     if (bodyHeigh > windowHeigh) {
-        $(window).scroll(function(){
-            if (($(document).height()
-                - $(window).height())
-                - $(window).scrollTop() < 500){
-                if (!disqus_loaded) {
-                    load_disqus();
-                }
-            }
-        });
+	setTimeout(load_disqus, 1000);
     } else {
-        setTimeout(load_disqus, 3000);
+        load_disqus();
     }
 
     // Show full source code
