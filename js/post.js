@@ -39,18 +39,19 @@ $(document).ready(function() {
     }
 
     // Show full source code
-    $('pre').each(function(idx, elem) {
+    $("pre").each(function(idx, elem) {
 
 	var scrollWidth = elem.scrollWidth;
 	var clientWidth = elem.clientWidth;
 	if (scrollWidth > clientWidth) {
 	    $(this).mouseover(function() {
-		$(this).css("width", scrollWidth);
+		// Hack
+		$(this).css("width", scrollWidth + 40);
 	    });
 	    $(this).mouseout(function() {
-		$(this).css("width", clientWidth);
+		// Hack
+		$(this).css("width", clientWidth - 14);
 	    });
 	}
     });
-
 });

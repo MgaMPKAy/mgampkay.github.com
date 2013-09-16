@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>MgaMPKAy's RepMin问题</title>
+    <link rel="stylesheet" type="text/css" href="../css/default.css" />
+  </head>
+  <body>
+    <header id="header">
+      <div id="logo">
+        <a href="../">MgaMPKAy's Blog</a>
+      </div>
+      <nav id="navigation">
+        <a href="../">Home</a>
+        <a href="../about.html">About</a>
+        <a href="../archive.html">Archive</a>
+      </nav>
+    </header>
+
+    <div id="content">
+      <h1>RepMin问题</h1>
+
+      <article>
+  <div class="info">September 16, 2013</div>
+
+  <section id="article-content">
+    <p>RepMin问题出自Richard Bird的一篇论文<code>Using Circular Programs to Eliminate Multiple Traversals of Data</code>，穷逼买不起论文，但是还是可以从各种渠道了解到其中的内容，其中的重点应该是<code>Circular Programs</code>，不过这里只记录一下RepMin问题。</p>
+<p>先简单地复述一下RepMin问题： 给定一个树，把其中全部节点的值替换成树中最小的值。</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">Tree</span> <span class="fu">=</span> <span class="dt">Empty</span> <span class="fu">|</span> <span class="dt">Node</span> <span class="dt">Int</span> <span class="dt">Tree</span> <span class="dt">Tree</span>
+
+<span class="ot">repMin::</span> <span class="dt">Tree</span> <span class="ot">-&gt;</span> <span class="dt">Tree</span>
+repMin <span class="fu">=</span> <span class="fu">undefined</span></code></pre>
+<h1 id="解决">解决</h1>
+<p>这问题怎么看好像都要把整棵树遍历两次：</p>
+<ol style="list-style-type: decimal">
+<li>求最小值m</li>
+<li>把全部节点的直替换成m</li>
+</ol>
+<pre class="sourceCode haskell"><code class="sourceCode haskell">treeMin <span class="dt">Empty</span> <span class="fu">=</span> <span class="fu">maxBound</span>
+treeMin (<span class="dt">Node</span> x l r) <span class="fu">=</span> <span class="fu">minimum</span> [x, treeMin l, treeMin r]
+
+treeMap f <span class="dt">Empty</span> <span class="fu">=</span> <span class="dt">Empty</span>
+treeMap f (<span class="dt">Node</span> x l r) <span class="fu">=</span> <span class="dt">Node</span> (f x) (treeMap f l) (treeMap f r)
+
+repMin2 t <span class="fu">=</span> <span class="kw">let</span> m <span class="fu">=</span> treeMin t <span class="kw">in</span> treeMap (<span class="fu">const</span> m) t</code></pre>
+<p>Bird就想出一种只要遍历一次的方法。</p>
+<p>首先，我们先考虑一个简单点问题：求树中的最小的值m，同时把全部值换成n。这真的是可以在一次遍历中完成的：</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">repMin' ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Tree</span> <span class="ot">-&gt;</span> (<span class="dt">Int</span>, <span class="dt">Tree</span>)
+repMin' n <span class="dt">Empty</span> <span class="fu">=</span> (<span class="fu">maxBound</span>, <span class="dt">Empty</span>)
+repMin' n (<span class="dt">Node</span> x l r) <span class="fu">=</span>
+    <span class="kw">let</span> (ml, tl) <span class="fu">=</span> repMin' n l
+        (mr, tr) <span class="fu">=</span> repMin' n r
+    <span class="kw">in</span> (<span class="fu">minimum</span> [ml, mr, x], <span class="dt">Node</span> n tl tr)</code></pre>
+<p>这和原来的问题有什么联系呢？ 首先我们通过<code>repMin' n</code>可以求得最小值<code>m</code>，还可以把节点都替换成另一个值<code>n</code>。如果我们通过循环引用令<code>m = n</code>会变成怎样呢？</p>
+<p>本来是这样的：</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">let</span> (m, t') <span class="fu">=</span> repMin' n tree <span class="kw">in</span> t'</code></pre>
+<p>然后把<code>m</code>也设为<code>n</code>：</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">let</span> (n, t') <span class="fu">=</span> repMin' n tree <span class="kw">in</span> t'</code></pre>
+<p>然后你就发现结果的<code>t'</code>刚好是我们想要的结果，也就是说<code>repMin</code>可以这样实现：</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell">repMin t <span class="fu">=</span> <span class="kw">let</span> (m, t') <span class="fu">=</span> repMin' m t <span class="kw">in</span> t'</code></pre>
+<p>这从语义上理解是可以的，从操作上理解就比较复杂。</p>
+<p><code>repMin</code>遍历树的时候把节点的值都换成<code>m</code>(每个节点都分享同一个<code>m</code>)，而<code>m</code>是遍历过程建立的一个求最小值的表达式(形如<code>minimum [minimum [minimum[...], ...], minimum [...], ...]</code>，就像建了另一棵树)。</p>
+<h1 id="一次遍历">一次遍历？</h1>
+<p>首先，<code>repMin'</code>是只用遍历一次的，然后我们在Hugs或者GHC里比较一下<code>repMin' 0</code>，<code>repMin2</code>和<code>repMin</code>需要规约的次数和占用内存，就可以大概知道repMin是不是一次遍历。</p>
+<p>我用下面这个函数来生成树：</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell">mkTree n
+    <span class="fu">|</span> n <span class="fu">&lt;</span> <span class="dv">0</span> <span class="fu">=</span> <span class="dt">Empty</span>
+    <span class="fu">|</span> <span class="fu">otherwise</span> <span class="fu">=</span> <span class="dt">Node</span> n (mkTree (n <span class="fu">-</span> <span class="dv">1</span>)) (mkTree (n <span class="fu">-</span> <span class="dv">2</span>))</code></pre>
+<p>然后对比规约的次数和使用内存量，看起来很神奇的<code>repMin</code>比遍历两次的<code>repMin2</code>要差一点，比<code>repMin'</code>好一点。<code>repMin</code>虽然对树是一次遍历，但是对<code>m</code>求值的时候,再遍历了另一棵表达式树，所以和同样是惰性求值的<code>repMin2</code>想比没有任何优势。</p>
+  </section>
+
+  <section id="comment">
+    <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+  </section>
+
+</article>
+
+<script type="text/javascript" src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
+<script type="text/javascript" src="../js/post.js"></script>
+
+
+    </div>
+    <footer id="footer">
+      @mgampkay
+    </footer>
+
+    <script type="text/javascript" src="../js/ga.js"></script>
+
+  </body>
+</html>
