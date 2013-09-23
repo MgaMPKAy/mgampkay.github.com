@@ -41,8 +41,8 @@
 <pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">PP</span> <span class="fu">=</span> <span class="dt">Ping</span> <span class="dt">PP</span>
         <span class="fu">|</span> <span class="dt">Pong</span> <span class="dt">PP</span>
         <span class="fu">|</span> <span class="dt">End</span></code></pre>
-<p>一个输出两个Ping再一个Pong的程序表示成：</p>
-<pre class="sourceCode haskell"><code class="sourceCode haskell">prog <span class="fu">=</span> <span class="dt">Ping</span> (<span class="dt">Ping</span> (<span class="dt">Pong</span> <span class="dt">End</span>))</code></pre>
+<p>一个输出两个Pong再一个Ping的程序表示成：</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell">prog <span class="fu">=</span> <span class="dt">Pong</span> (<span class="dt">Pong</span> (<span class="dt">Ping</span> <span class="dt">End</span>))</code></pre>
 <div class="figure">
 <img src="../images/ping-pong.png" />
 </div>
@@ -51,7 +51,7 @@
 <div class="figure">
 <img src="../images/ping-pong-loop.png" />
 </div>
-<p>也就是说一个程序表示成一颗树，实际的执行就是遍历这棵树，根据每个节点执行相应操作。</p>
+<p>也就是说一个程序表示成一个图，实际的执行就是遍历这个图，根据每个节点执行相应操作。</p>
 <p>在这基础上实现“进程”就很简单了，这样增加树的分叉就行了。</p>
 <pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">PP</span> <span class="fu">=</span> <span class="dt">Ping</span> <span class="dt">PP</span>
         <span class="fu">|</span> <span class="dt">Pong</span> <span class="dt">PP</span>
@@ -64,7 +64,7 @@
 <div class="figure">
 <img src="../images/ping-pong-fork.png" />
 </div>
-<p>虽然这是一个无穷的数据结构，但是Haskell只会在需要的时候才构造，而访问过的节点可以被GC(用ghc编译，ppfork执行很久都没问题，而且内存不涨，Hugs瞬间GC失败，runghc内存狂涨)。</p>
+<p>虽然这是一个无穷的数据结构，但是Haskell只会在需要的时候才构造，而访问过的节点可以被GC<sup><a href="#fn1" class="footnoteRef" id="fnref1">1</a></sup>(用ghc编译，ppfork执行很久都没问题，而且内存不涨，Hugs瞬间GC失败，runghc内存狂涨)。</p>
 <p>然后就可以增加占有线程(<code>Hold</code>)、主动放弃进程(<code>Yield</code>)、结束整个程序(<code>Exit</code>)的操作，甚至可以执行一些IO操作(<code>IOAction</code>)：</p>
 <pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">PP</span> <span class="fu">=</span> <span class="dt">Ping</span> <span class="dt">PP</span>
         <span class="fu">|</span> <span class="dt">Pong</span> <span class="dt">PP</span>
@@ -108,6 +108,12 @@ runCO (p<span class="fu">:</span>ps) <span class="fu">=</span>
 <li>只能在IO Monad里运行</li>
 </ol>
 <p>放心，在下一部分我们会把问题会被各个击破的。</p>
+<div class="footnotes">
+<hr />
+<ol>
+<li id="fn1"><p>这个图画错了，应该是类似上面一张图那样，两个分支都是对自身的循环引用，所以是不需GC的了。<a href="#fnref1">↩</a></p></li>
+</ol>
+</div>
   </section>
 
   <section id="comment">
