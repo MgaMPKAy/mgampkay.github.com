@@ -55,11 +55,12 @@ Device: 1eh/30d	Inode: 67074       Links: 4</code></pre>
 $ cd -P ..
 $ pwd
 /tmp/workspace/outer</code></pre>
-<p>bash里出错：</p>
+<p><del>bash里出错：</del></p>
 <pre><code>$ cd -P ..
 bash: cd: - : invalid option
 cd: usage: cd [-L|[-P [-e]]] [dir]</code></pre>
-<p>这是bug?</p>
+<p><del>这是bug?</del></p>
+<p>Edit 2013-09-23: 出错是因为我的cd是一个函数的别名，在那个函数里没处理好参数。</p>
   </section>
 
   <section id="comment">
