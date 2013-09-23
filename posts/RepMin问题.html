@@ -45,7 +45,7 @@ treeMap f (<span class="dt">Node</span> x l r) <span class="fu">=</span> <span c
 
 repMin2 t <span class="fu">=</span> <span class="kw">let</span> m <span class="fu">=</span> treeMin t <span class="kw">in</span> treeMap (<span class="fu">const</span> m) t</code></pre>
 <p>Bird就想出一种只要遍历一次的方法。</p>
-<p>首先，我们先考虑一个简单点问题：求树中的最小的值m，同时把全部值换成n。这真的是可以在一次遍历中完成的：</p>
+<p>首先，我们先考虑一个简单点问题：求树中的最小的值m，同时把全部值换成n。这<del>真的是</del>看起来是可以在一次遍历中完成的：</p>
 <pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">repMin' ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Tree</span> <span class="ot">-&gt;</span> (<span class="dt">Int</span>, <span class="dt">Tree</span>)
 repMin' n <span class="dt">Empty</span> <span class="fu">=</span> (<span class="fu">maxBound</span>, <span class="dt">Empty</span>)
 repMin' n (<span class="dt">Node</span> x l r) <span class="fu">=</span>
@@ -67,7 +67,7 @@ repMin' n (<span class="dt">Node</span> x l r) <span class="fu">=</span>
 <pre class="sourceCode haskell"><code class="sourceCode haskell">mkTree n
     <span class="fu">|</span> n <span class="fu">&lt;</span> <span class="dv">0</span> <span class="fu">=</span> <span class="dt">Empty</span>
     <span class="fu">|</span> <span class="fu">otherwise</span> <span class="fu">=</span> <span class="dt">Node</span> n (mkTree (n <span class="fu">-</span> <span class="dv">1</span>)) (mkTree (n <span class="fu">-</span> <span class="dv">2</span>))</code></pre>
-<p>然后对比规约的次数和使用内存量，看起来很神奇的<code>repMin</code>比遍历两次的<code>repMin2</code>要差一点，比<code>repMin'</code>好一点。<code>repMin</code>虽然对树是一次遍历，但是对<code>m</code>求值的时候,再遍历了另一棵表达式树，所以和同样是惰性求值的<code>repMin2</code>想比没有任何优势。</p>
+<p>然后对比规约的次数和使用内存量，看起来很神奇的<code>repMin</code>比遍历两次的<code>repMin2</code>要差一点，比<code>repMin'</code>好一点。<code>repMin</code>虽然对树是一次遍历，但是对<code>m</code>求值的时候,再遍历了另一棵表达式树(<code>repMin'</code>存在同样的问题)，所以和同样是惰性求值的<code>repMin2</code>想比没有任何优势。</p>
   </section>
 
   <section id="comment">
