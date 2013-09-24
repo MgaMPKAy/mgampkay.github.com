@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>MgaMPKAy's 设置ptrace_scope</title>
+    <link rel="stylesheet" type="text/css" href="../css/default.css" />
+  </head>
+  <body>
+    <header id="header">
+      <div id="logo">
+        <a href="../">MgaMPKAy's Blog</a>
+      </div>
+      <nav id="navigation">
+        <a href="../">Home</a>
+        <a href="../about.html">About</a>
+        <a href="../archive.html">Archive</a>
+      </nav>
+    </header>
+
+    <div id="content">
+      <h1>设置ptrace_scope</h1>
+
+      <article>
+  <div class="info">September 24, 2013</div>
+
+  <section id="article-content">
+    <p>最近一次升级ArchLinux，开机多了两个错误消息（一个来自驱动，一个来自systemd），加上其他小变化，强迫症表示很不爽。</p>
+<p>今天又发现没法直接<code>strace -p</code>自己的进程，一查发现内核参数<code>kernel.yama.ptrace_scope</code>是1，原来是最近才<a href="https://projects.archlinux.org/svntogit/packages.git/commit/trunk?h=packages/linux&amp;id=406628128acbe26a3dea1b04b45f93dc4348eb66">加上</a>的。</p>
+<p>好吧，安全特性，但是需要的时候还是要放行的，不然每次strace都要sudo太麻烦了：</p>
+<pre class="sourceCode bash"><code class="sourceCode bash"><span class="fu">toggle_ptrace ()</span>
+<span class="kw">{</span>
+    <span class="kw">local</span> <span class="ot">enable</span>;
+    <span class="kw">mapfile</span> -t enabled <span class="kw">&lt;</span> /proc/sys/kernel/yama/ptrace_scope<span class="kw">;</span>
+    <span class="ot">enabled=${enable[0]}</span>;
+    <span class="kw">if [[</span> <span class="ot">$enabled</span> <span class="ot">==</span> <span class="st">'0'</span><span class="kw"> ]]</span>; <span class="kw">then</span>
+        <span class="ot">enabled=</span>1;
+    <span class="kw">else</span>
+        <span class="ot">enabled=</span>0;
+    <span class="kw">fi</span>;
+
+    <span class="kw">sudo</span> sh -c <span class="st">&quot;echo </span><span class="ot">$enabled</span><span class="st"> &gt; /proc/sys/kernel/yama/ptrace_scope&quot;</span>
+<span class="kw">}</span></code></pre>
+  </section>
+
+  <section id="comment">
+    <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+  </section>
+
+</article>
+
+<script type="text/javascript" src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
+<script type="text/javascript" src="../js/post.js"></script>
+
+
+    </div>
+    <footer id="footer">
+      @mgampkay
+    </footer>
+
+    <script type="text/javascript" src="../js/ga.js"></script>
+
+  </body>
+</html>
