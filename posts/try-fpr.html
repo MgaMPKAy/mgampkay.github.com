@@ -41,13 +41,13 @@ ghci&gt; replicateM 20 $ currentValue behavior &gt;&gt;= print &gt;&gt;threadDel
 <pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">accumE ::</span> a <span class="ot">-&gt;</span> <span class="dt">Event</span> (a <span class="ot">-&gt;</span> a) <span class="ot">-&gt;</span> <span class="dt">IO</span> (<span class="dt">Event</span> a)</code></pre>
 <p>给定一个累加器的初始值作和一个产生函数的事件流，返回一个新的事件流，这个新的事件流是把函数流做用到累加器上的得到的。假设0是初始值，函数流里都是<code>(+1)</code>，那么<code>accumE</code>得到的事件流就是 0、(0 + 1)、 (0 + 1 + 1) … 。这么说，我们只要把Timer的事件流变成一个函数事件流，我们就可以记录事件次数。</p>
 <pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">apply ::</span> <span class="dt">Behavior</span> (a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> <span class="dt">Event</span> a <span class="ot">-&gt;</span> <span class="dt">Event</span> b</code></pre>
-<p><code>apply</code>可以把一个Behavior作用到事件流上得到一个新的事件流，这和我们的想法很接近了。只要把<code>const (+1)</code>作用到Timer的事件流上就可以了。因为Behavior是个Applicative，我们直接用<code>pure</code>可以把一个函数转成Behavior。</p>
+<p><code>apply</code>可以把一个Behavior作用到事件流上得到一个新的事件流，这和我们的想法很接近了。只要把<code>const (+1)</code>作用到Timer的事件流上就可以了。因为Behavior是个Applicative，我们直接用<code>pure</code>可以把一个函数转成Behavior。(后来才发现Event是Functor，直接<code>fmap (const (+1))</code>就可以了)</p>
 <pre><code>ghci&gt; let incEvent = apply (pure $ const ((+1)::Int-&gt;Int)) (Timer.tick timer)
 ghci&gt; countEvent &lt;- accumE 0 incEvent</code></pre>
 <p>可是这样得到的<code>countEvent</code>还是个Event，还要用<code>stepper</code>转成Behavior。</p>
 <pre><code>ghci&gt; count &lt;- stepper 0 countEvent</code></pre>
 <p>然后就可以用<code>currentValue count</code>得到现在事件出现的总次数了。</p>
-<p>可以看出通过<code>apply</code>和Behavior实现事件流的转化，<code>accumE</code>实现事件累加，<code>stepper</code>实现Event到Behavior的转换。</p>
+<p>可以看出通过<code>apply</code>、<code>fmap</code>和Behavior实现事件流的转化，<code>accumE</code>实现事件累加，<code>stepper</code>实现Event到Behavior的转换。</p>
 <p>为什么Behavior会独立纯在，它好像也是个流而已？如果<code>apply</code>的类型变成<code>Event (a -&gt; b) -&gt; Event a -&gt; Evnet b</code>，会发现两个事件流必须同步才可行，不然某个时间点内可能没有函数或者没有值。</p>
 <p>Behavior就被用来表达一种保持值的流，在下一次改变前会保持当前值。FPR里一个概念就是Time-varying Value，根据时间而改变的值，在这就是用Behavior表示的，是连续的，Event表示离散的值。</p>
   </section>
