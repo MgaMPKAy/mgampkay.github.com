@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>MgaMPKAy's 尝试FPR</title>
+    <link rel="stylesheet" type="text/css" href="../css/default.css" />
+  </head>
+  <body>
+    <header id="header">
+      <div id="logo">
+        <a href="../">MgaMPKAy's Blog</a>
+      </div>
+      <nav id="navigation">
+        <a href="../">Home</a>
+        <a href="../about.html">About</a>
+        <a href="../archive.html">Archive</a>
+      </nav>
+    </header>
+
+    <div id="content">
+      <h1>尝试FPR</h1>
+
+      <article>
+  <div class="info">October  3, 2013</div>
+
+  <section id="article-content">
+    <p>之前经常看到Functional Reactive Programm，看了一些库的文档，不知道是怎么实现的，不知道靠那几个基本的combinator能做什么，昨天试了一下<a href="http://hackage.haskell.org/package/threepenny-gui">threepenny-gui</a>，突然觉得自己会用FRP了。</p>
+<p>发现它有个<a href="http://hackage.haskell.org/package/threepenny-gui-0.3.0.0/docs/Graphics-UI-Threepenny-Timer.html">Timer</a>模块，我做的第一个尝试就是记录Timer事件出现的总次数。</p>
+<pre><code>ghci&gt; import Reactive.Threepenny
+ghci&gt; import qualified Graphics.UI.Threepenny.Timer as Timer
+ghci&gt; import Control.Concurrent
+ghci&gt; import Control.Monad</code></pre>
+<p>首现, Timer的事件（流）是一个<code>Event ()</code>，表示内容为<code>()</code>，因为这Timer只关心时间间隔到了。</p>
+<p>通过<code>stepper</code>我们把一个Event转换成一个Behavior，然后用<code>currentValue</code>经过Behavior观察到Event当前的值。</p>
+<pre><code>ghci&gt; timer &lt;- Timer.timer
+ghci&gt; behavior &lt;- stepper () (Timer.tick timer)
+ghci&gt; Timer.start timer
+ghci&gt; replicateM 20 $ currentValue behavior &gt;&gt;= print &gt;&gt;threadDelay(10^6)</code></pre>
+<p>会看到一串<code>()</code>，因为Timer事件的值一直都是<code>()</code>。再看<code>accumE</code>函数：</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">accumE ::</span> a <span class="ot">-&gt;</span> <span class="dt">Event</span> (a <span class="ot">-&gt;</span> a) <span class="ot">-&gt;</span> <span class="dt">IO</span> (<span class="dt">Event</span> a)</code></pre>
+<p>给定一个累加器的初始值作和一个产生函数的事件流，返回一个新的事件流，这个新的事件流是把函数流做用到累加器上的得到的。假设0是初始值，函数流里都是<code>(+1)</code>，那么<code>accumE</code>得到的事件流就是 0、(0 + 1)、 (0 + 1 + 1) … 。这么说，我们只要把Timer的事件流变成一个函数事件流，我们就可以记录事件次数。</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">apply ::</span> <span class="dt">Behavior</span> (a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> <span class="dt">Event</span> a <span class="ot">-&gt;</span> <span class="dt">Event</span> b</code></pre>
+<p><code>apply</code>可以把一个Behavior作用到事件流上得到一个新的事件流，这和我们的想法很接近了。只要把<code>const (+1)</code>作用到Timer的事件流上就可以了。因为Behavior是个Applicative，我们直接用<code>pure</code>可以把一个函数转成Behavior。</p>
+<pre><code>ghci&gt; let incEvent = apply (pure $ const ((+1)::Int-&gt;Int)) (Timer.tick timer)
+ghci&gt; countEvent &lt;- accumE 0 incEvent</code></pre>
+<p>可是这样得到的<code>countEvent</code>还是个Event，还要用<code>stepper</code>转成Behavior。</p>
+<pre><code>ghci&gt; count &lt;- stepper 0 countEvent</code></pre>
+<p>然后就可以用<code>currentValue count</code>得到现在事件出现的总次数了。</p>
+<p>可以看出通过<code>apply</code>和Behavior实现事件流的转化，<code>accumE</code>实现事件累加，<code>stepper</code>实现Event到Behavior的转换。</p>
+<p>为什么Behavior会独立纯在，它好像也是个流而已？如果<code>apply</code>的类型变成<code>Event (a -&gt; b) -&gt; Event a -&gt; Evnet b</code>，会发现两个事件流必须同步才可行，不然某个时间点内可能没有函数或者没有值。</p>
+<p>Behavior就被用来表达一种保持值的流，在下一次改变前会保持当前值。FPR里一个概念就是Time-varying Value，根据时间而改变的值，在这就是用Behavior表示的，是连续的，Event表示离散的值。</p>
+  </section>
+
+  <section id="comment">
+    <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+  </section>
+
+</article>
+
+<script type="text/javascript" src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
+<script type="text/javascript" src="../js/post.js"></script>
+
+
+    </div>
+    <footer id="footer">
+      @mgampkay
+    </footer>
+
+    <script type="text/javascript" src="../js/ga.js"></script>
+
+  </body>
+</html>
