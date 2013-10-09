@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>MgaMPKAy's GTK+字体设置</title>
+    <link rel="stylesheet" type="text/css" href="../css/default.css" />
+  </head>
+  <body>
+    <header id="header">
+      <div id="logo">
+        <a href="../">MgaMPKAy's Blog</a>
+      </div>
+      <nav id="navigation">
+        <a href="../">Home</a>
+        <a href="../about.html">About</a>
+        <a href="../archive.html">Archive</a>
+      </nav>
+    </header>
+
+    <div id="content">
+      <h1>GTK+字体设置</h1>
+
+      <article>
+  <div class="info">October  9, 2013</div>
+
+  <section id="article-content">
+    <p>错觉：每次升级Archlinux之后都要改设置</p>
+<p>今天无聊滚到最新，发现Opera的标题字体变大了，菜单的字体也变大了，好难看。去看看gtk更新了什么，只发现这一条： <a href="https://projects.archlinux.org/svntogit/packages.git/commit/trunk?h=packages/gtk2&amp;id=d3df0c83ee8202e19b85d980955fc6620c88d09b">Add proper default theme settings</a>，默认字体被改了，而且这居然还叫“proper”，都没装那个字体呢，你就不把依赖也补上？</p>
+<p>我应该到Arch的论坛吐槽的。</p>
+<p>总要改回去吧，现在只好再污染一下家目录，建个 <code>~/.gtkrc-2.0</code>，写上：</p>
+<pre><code>gtk-font-name = &quot;DejaVu Sans 10&quot;</code></pre>
+<hr />
+
+<p>为什么total function是partial function的特例？ 以前我是从指称语义来理解的：Partial function可能返回⊥（<span class="math">\(A\to B\cup \{\bot\}\)</span>），而total function不会（<span class="math">\(A\to B\)</span>），所以total是partial的特例。不过我也不知道这种理解方法是否正确。</p>
+  </section>
+
+  <section id="comment">
+    <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+  </section>
+
+</article>
+
+<script type="text/javascript" src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
+<script type="text/javascript" src="../js/post.js"></script>
+<script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+    </div>
+    <footer id="footer">
+      @mgampkay
+    </footer>
+
+    <script type="text/javascript" src="../js/ga.js"></script>
+
+  </body>
+</html>
