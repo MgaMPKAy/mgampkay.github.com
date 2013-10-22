@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>MgaMPKAy's Prefork技巧</title>
+    <link rel="stylesheet" type="text/css" href="../css/default.css" />
+  </head>
+  <body>
+    <header id="header">
+      <div id="logo">
+        <a href="../">MgaMPKAy's Blog</a>
+      </div>
+      <nav id="navigation">
+        <a href="../">Home</a>
+        <a href="../about.html">About</a>
+        <a href="../archive.html">Archive</a>
+      </nav>
+    </header>
+
+    <div id="content">
+      <h1>Prefork技巧</h1>
+
+      <article>
+  <div class="info">October 20, 2013</div>
+
+  <section id="article-content">
+    <p>去年10月读了一下<a href="http://hackage.haskell.org/package/c10k">c10k</a>的代码，写了点笔记，今天又看了一遍。</p>
+<p>c10k是个用Haskell写的网络服务器函数库，如名字所说，可以处理10000并发连接。GHC 6.X还在用select()，所以c10k用prefork来应付select()只能处理1024个文件描述符的局限，后来GHC 7.X换到了epoll()，c10k说prefork可以来让请求在多核上分配更均衡。不过根据Warp的说法，GHC 7.8之后prefork已经没必要了。</p>
+<p>Prefork的实现：</p>
+<ol style="list-style-type: decimal">
+<li>父进程完成socket()、bind()、listen()</li>
+<li>父进程fork几个子进程</li>
+<li>子进程在共享的socket上accpet()</li>
+</ol>
+<p>新的连接到达时，系统会把请求分配给一个子进程，那个子进程的accept()会返回。实际分配依赖于操作系统，所以c10k还限制了每个子进程最大并发连接数，达到上限之后就不再accept()，把机会留其它没到上限的子进程。</p>
+<p>c10k只做了连接的处理，然后就把Socket交给应用现应用逻辑。</p>
+  </section>
+
+  <section id="comment">
+    <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+  </section>
+
+</article>
+
+<script type="text/javascript" src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
+<script type="text/javascript" src="../js/post.js"></script>
+
+
+    </div>
+    <footer id="footer">
+      @mgampkay
+    </footer>
+
+    <script type="text/javascript" src="../js/ga.js"></script>
+
+  </body>
+</html>
