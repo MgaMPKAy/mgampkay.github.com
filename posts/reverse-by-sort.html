@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>MgaMPKAy's 通过排序反转列表?</title>
+    <link rel="stylesheet" type="text/css" href="../css/default.css" />
+  </head>
+  <body>
+    <header id="header">
+      <div id="logo">
+        <a href="../">MgaMPKAy's Blog</a>
+      </div>
+      <nav id="navigation">
+        <a href="../">Home</a>
+        <a href="../about.html">About</a>
+        <a href="../archive.html">Archive</a>
+      </nav>
+    </header>
+
+    <div id="content">
+      <h1>通过排序反转列表?</h1>
+
+      <article>
+  <div class="info">August 20, 2013</div>
+
+  <section id="article-content">
+    <p>前天在某个地方的习题看到的，忘了具体是哪里。</p>
+<p>问：能不同通过一个特定排序关系和特定的排序算法实现反转列表？</p>
+<p>例如这个：</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell">cmp x y <span class="fu">=</span> <span class="kw">if</span> x <span class="fu">==</span> y <span class="kw">then</span> <span class="kw">LT</span> <span class="kw">else</span> <span class="kw">GT</span>
+
+reverseBySort <span class="fu">=</span> sortBy cmp</code></pre>
+<p>用QuickCheck试了一下似乎真可以哦：</p>
+<pre><code>ghci &gt; quickCheck $ \ls -&gt; reverse ls == reverseBySort (ls::[Int])
++++ OK, passed 100 tests</code></pre>
+<p>再把测试次数加大，发现这个cmp和sortBy是是不行的：</p>
+<pre><code>ghci&gt; let prop = \ls -&gt; reverse ls == reverseBySort (ls::[Int])
+ghci&gt; quickCheckWith (stdArgs {maxSuccess = 10000}) prop
+*** Failed! Falsifiable (after 4107 tests and 2 shrinks):
+[6,6,0,6]</code></pre>
+<p>现在有这些函数:</p>
+<ol style="list-style-type: decimal">
+<li><code>cmp :: Ord a -&gt; a -&gt; a -&gt; Ordering</code></li>
+<li><code>sortBy :: Ord a =&gt; (a -&gt; a -&gt; Ordering) -&gt; [a] -&gt; [a]</code></li>
+</ol>
+<p>其中sortBy必须满足<code>sortBy compare</code>是正确的升序排序，怎么证明 <span class="math">\(\exists ls . sortBy \;cmp\; ls \neq reverse\; ls\)</span> ?</p>
+  </section>
+
+  <section id="comment">
+    <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+  </section>
+
+</article>
+
+<script type="text/javascript" src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
+<script type="text/javascript" src="../js/post.js"></script>
+<script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+    </div>
+    <footer id="footer">
+      @mgampkay
+    </footer>
+
+    <script type="text/javascript" src="../js/ga.js"></script>
+
+  </body>
+</html>
