@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>MgaMPKAy's Java的泛型和Phantom type</title>
+    <link rel="stylesheet" type="text/css" href="../css/default.css" />
+  </head>
+  <body>
+    <header id="header">
+      <div id="logo">
+        <a href="../">MgaMPKAy's Blog</a>
+      </div>
+      <nav id="navigation">
+        <a href="../">Home</a>
+        <a href="../about.html">About</a>
+        <a href="../archive.html">Archive</a>
+      </nav>
+    </header>
+
+    <div id="content">
+      <h1>Java的泛型和Phantom type</h1>
+
+      <article>
+  <div class="info">October 24, 2013</div>
+
+  <section id="article-content">
+    <p>上星期去百田面试，被问到关于Java泛型的理解，那时候我的回答就是“参数化类型”<sup><a href="#fn1" class="footnoteRef" id="fnref1">1</a></sup>，准确的讲来说还是bounded的…下面的泛型都指Java的泛型。</p>
+<p>我见过最有趣的泛型的用法就是实现Phantom type。</p>
+<pre class="sourceCode java"><code class="sourceCode java"><span class="kw">interface</span> IsSafe {}
+<span class="kw">interface</span> Safe <span class="kw">extends</span> IsSafe {}
+<span class="kw">interface</span> UnSafe <span class="kw">extends</span> IsSafe {}
+
+<span class="kw">public</span> <span class="kw">class</span> Input&lt;T <span class="kw">extends</span> IsSafe&gt; {
+	String str;
+	<span class="fu">Input</span>(String str) {
+		<span class="kw">this</span>.<span class="fu">str</span> = str;
+	}
+
+	<span class="dt">static</span> Input&lt;Safe&gt; <span class="fu">escape</span>(Input&lt;UnSafe&gt; unsafe) {
+		<span class="kw">return</span> <span class="kw">new</span> Input&lt;Safe&gt;(unsafe.<span class="fu">str</span>);
+	}
+}</code></pre>
+<p>IsSafe、Safe、UnSafe这3个接口只作为类型信息，用来标记一个Input是否安全，escape()的作用就是把一个不安全的Input转成安全的。这样就可以做到在编译期保证需要<code>Input&lt;Safe&gt;</code>的方法不会得到<code>Input&lt;UnSafe&gt;</code>或者其他东西<sup><a href="#fn2" class="footnoteRef" id="fnref2">2</a></sup>，除非你强转了。</p>
+<p>使用Phantom type也要考虑一些问题：</p>
+<ol style="list-style-type: decimal">
+<li>转换时要新建对象</li>
+<li>类型信息必须不能和对象可变的状态关联</li>
+</ol>
+<p>这还让我想起了很久前想过的一个问题：区分子类的是什么？这个问题是我在看《重构与模式》时想到的，在Creation method那节，作者解释为什么在示例中几个类为什么不继承自一个抽象超类，因为在那个例子里：</p>
+<ol style="list-style-type: decimal">
+<li>区分类型的不是字段，而是计算数据的方式不同</li>
+<li>不同类型之间转换比较方便</li>
+</ol>
+<p>“计算数据的方式不同”在那里是用策略模式实现的， 我想过把策略模式的实现改变一下，本来要为每一个策略建一个子类，现在直接在一个策略类里那里重载，由编译器根据Phantom type来选择策略。不过因为Java泛型是Type erasure实现的，运行时已经没了Phantom type的信息，重载不了。</p>
+<p>更多Phantom type在Java和C#里的用法：<a href="http://twistedoakstudios.com/blog/Post341_abusing-phantom-types-to-encode-list-lengths-into-their-type" title="Abusing “Phantom Types” to Encode List Lengths Into Their Type">1</a>, <a href="http://maniagnosis.crsr.net/2010/06/phantom-types-in-java.html" title="Phantom Types in Java">2</a>, <a href="http://gabrielsw.blogspot.com/2012/09/phantom-types-in-java.html" title="Phantom Types in Java">3</a>。</p>
+<div class="footnotes">
+<hr />
+<ol>
+<li id="fn1"><p>在面试的时候，我有一个小声“弱爆的”脱口而出，不知道是不是在说Java的泛型。<a href="#fnref1">↩</a></p></li>
+<li id="fn2"><p>当然你建两个Input的子类： SafeInput，UnSafeInput，也是能达到类似的类型安全要求。<a href="#fnref2">↩</a></p></li>
+</ol>
+</div>
+  </section>
+
+  <section id="comment">
+    <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+  </section>
+
+</article>
+
+<script type="text/javascript" src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
+<script type="text/javascript" src="../js/post.js"></script>
+
+
+    </div>
+    <footer id="footer">
+      @mgampkay
+    </footer>
+
+    <script type="text/javascript" src="../js/ga.js"></script>
+
+  </body>
+</html>
