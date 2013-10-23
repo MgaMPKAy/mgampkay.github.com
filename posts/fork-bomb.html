@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>MgaMPKAy's 预防Fork Bomb?</title>
+    <link rel="stylesheet" type="text/css" href="../css/default.css" />
+  </head>
+  <body>
+    <header id="header">
+      <div id="logo">
+        <a href="../">MgaMPKAy's Blog</a>
+      </div>
+      <nav id="navigation">
+        <a href="../">Home</a>
+        <a href="../about.html">About</a>
+        <a href="../archive.html">Archive</a>
+      </nav>
+    </header>
+
+    <div id="content">
+      <h1>预防Fork Bomb?</h1>
+
+      <article>
+  <div class="info">October 23, 2013</div>
+
+  <section id="article-content">
+    <p>今天不小心自己造了个fork炸弹，然后引爆了…运气好用killall全杀了。</p>
+<p>事情是这样的，今天想改进一下现在的用的<code>command_not_found_handle</code>，原来只显示程序名，现在想加上参数显示。然后我加了这么一句：</p>
+<pre class="sourceCode bash"><code class="sourceCode bash"><span class="kw">print</span> <span class="st">&quot;Can't run: %s\n&quot;</span> <span class="st">&quot;</span><span class="ot">$all</span><span class="st">&quot;</span></code></pre>
+<p>注意我用了<code>print</code>而不是<code>printf</code>，因为没有<code>print</code>这个程序，所以又触发一次<code>command_not_found_handle</code>，然后就递归啦，建了大量的bash进程。</p>
+<p>Fork炸弹最麻烦在于它可以让一个用户无法再建新进程，运气好的话，爆炸前就开了个shell，可以在里面用kill杀进程。其次就是会占用大量内存，也许在没到用户最大进程数就swap了，系统性能就大降了。</p>
+<p>下面说的预防其实是指预防自己引爆Fork炸弹，如果系统都被人入侵了，能执行任意程序了，预防fork炸弹根本就没意义。</p>
+<p>有人说用<code>ulimit -u</code>设置用户最大进程数，可以来预防fork炸弹。不过实际用处不大，只能说只能减少一点破坏。例如一个bash进程大约占3M的内存，设置太大一下就swap了，设置太小又可能影响正常使用，而且产生fork炸弹的不一定是bash，单靠用户进程数来限制是不够的。</p>
+<p>也许在写代码的时候要注意一下会不会fork()，有fork()就先设ulimit再测试。推广一下就是测试前估计资源使用量，用ulimit设置限制再测试。</p>
+<p>总的来说，资源管理是很麻烦的事。</p>
+<hr />
+
+<p>PS. 随便重构了一下我的bash启动脚本，<code>~/.bashrc</code>里设置环境变量的都移到<code>~/.bash_profile</code>，现在<code>~/.bashrc</code>只用来执行其他脚本和设置shell变量。</p>
+  </section>
+
+  <section id="comment">
+    <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+  </section>
+
+</article>
+
+<script type="text/javascript" src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
+<script type="text/javascript" src="../js/post.js"></script>
+
+
+    </div>
+    <footer id="footer">
+      @mgampkay
+    </footer>
+
+    <script type="text/javascript" src="../js/ga.js"></script>
+
+  </body>
+</html>
