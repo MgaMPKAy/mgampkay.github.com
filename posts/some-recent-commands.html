@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>MgaMPKAy's 最近用到的命令</title>
+    <link rel="stylesheet" type="text/css" href="../css/default.css" />
+  </head>
+  <body>
+    <header id="header">
+      <div id="logo">
+        <a href="../">MgaMPKAy's Blog</a>
+      </div>
+      <nav id="navigation">
+        <a href="../">Home</a>
+        <a href="../about.html">About</a>
+        <a href="../archive.html">Archive</a>
+      </nav>
+    </header>
+
+    <div id="content">
+      <h1>最近用到的命令</h1>
+
+      <article>
+  <div class="info">November  4, 2013</div>
+
+  <section id="article-content">
+    <p>在可以按行处理，而且每行的格式都固定的时候，用各种Unix工具做字符串操作还是比较方便的。下面是这几天用到的一些命令，应该有更高效的方法，不过我只会用每个工具的基本用法。</p>
+<h2 id="统计常用的命令">统计常用的命令</h2>
+<table class="sourceCode bash numberLines"><tr class="sourceCode"><td class="lineNumbers"><pre>1
+2
+3
+4
+5
+</pre></td><td class="sourceCode"><pre><code class="sourceCode bash"><span class="kw">awk</span> <span class="st">'$0 !~ /^#/ {print $N}'</span> ~/.bash_history <span class="kw">|</span>
+    <span class="kw">sed</span> <span class="st">'s/ | /\n/g'</span> <span class="kw">|</span>
+    <span class="kw">awk</span> <span class="st">'{print $1}'</span> <span class="kw">|</span>
+    <span class="kw">sort</span> <span class="kw">|</span> <span class="kw">uniq</span> -c <span class="kw">|</span>
+    <span class="kw">sort</span> -nr</code></pre></td></tr></table>
+<p>每一行的作用：</p>
+<ol style="list-style-type: decimal">
+<li>读取~/.bash，去掉#开头的时间信息</li>
+<li>把<code>|</code>换成换行，被管道连接的命令也要计算</li>
+<li>输出每行的第一个字段</li>
+<li>排序，计算每个命令出现的次数</li>
+<li>按次数排序</li>
+</ol>
+<p>最常用前十个命令和次数：</p>
+<table>
+<tbody>
+<tr class="odd">
+<td align="left">cd</td>
+<td align="center">852</td>
+</tr>
+<tr class="even">
+<td align="left">zathura</td>
+<td align="center">562</td>
+</tr>
+<tr class="odd">
+<td align="left">\rm</td>
+<td align="center">558</td>
+</tr>
+<tr class="even">
+<td align="left">cat</td>
+<td align="center">556</td>
+</tr>
+<tr class="odd">
+<td align="left">ls</td>
+<td align="center">543</td>
+</tr>
+<tr class="even">
+<td align="left">sudo</td>
+<td align="center">474</td>
+</tr>
+<tr class="odd">
+<td align="left">lsl</td>
+<td align="center">455</td>
+</tr>
+<tr class="even">
+<td align="left">grep</td>
+<td align="center">334</td>
+</tr>
+<tr class="odd">
+<td align="left">cp</td>
+<td align="center">334</td>
+</tr>
+<tr class="even">
+<td align="left">opera</td>
+<td align="center">318</td>
+</tr>
+</tbody>
+</table>
+<h2 id="统计安装的haskell包">统计安装的Haskell包</h2>
+<p>因为以前用cabal-dev分开管理不同的Haskell项目，所以有些包重复安装了在不同的项目里，所以想看一下一共安装那些包。</p>
+<table class="sourceCode bash numberLines"><tr class="sourceCode"><td class="lineNumbers"><pre>1
+2
+3
+4
+</pre></td><td class="sourceCode"><pre><code class="sourceCode bash"><span class="kw">find</span> . -type f -name <span class="st">&quot;*.conf&quot;</span> <span class="kw">|</span>
+    <span class="kw">awk</span> -F / <span class="st">'{print $NF}'</span> <span class="kw">|</span>
+    <span class="kw">rev</span> <span class="kw">|</span> <span class="kw">cut</span> -b 39- <span class="kw">|</span> <span class="kw">awk</span> -F - <span class="st">'{print $2}'</span> <span class="kw">|</span> <span class="kw">rev</span> <span class="kw">|</span>
+    <span class="kw">sort</span> -u</code></pre></td></tr></table>
+<p>每一行的作用：</p>
+<ol style="list-style-type: decimal">
+<li>找到全部包的信息文件路径</li>
+<li>得到信息文件名</li>
+<li>得到包名</li>
+<li>排序去重</li>
+</ol>
+<p>信息文件的文件名的格式是<code>包名-版本-32位哈希.conf</code>，因为包名里可能有<code>-</code>，根据<code>-</code>取第一个字段不一定是完整的包名。但是后面的<code>-32位哈希.conf</code>的长度是固定的，所以我先用rev反转然后用cut去掉这固定长度的部分，然后再根据<code>-</code>拿到反转的包名，最后再转回来。</p>
+<h2 id="迁移ghc安装位置">迁移GHC安装位置</h2>
+<p>直接把文件移动到其他地方还不行，因为包的信息文件里也有路径信息，移动文件后要修改。</p>
+<table class="sourceCode bash numberLines"><tr class="sourceCode"><td class="lineNumbers"><pre>1
+2
+3
+4
+</pre></td><td class="sourceCode"><pre><code class="sourceCode bash"><span class="kw">for</span> <span class="kw">f</span> in *.conf <span class="kw">;</span>  <span class="kw">do</span>
+    <span class="kw">sed</span> s,/usr/lib/ghc,/opt/ghc-7.7,g <span class="ot">$f</span> <span class="kw">&gt;</span> new<span class="kw">;</span>
+    <span class="kw">cp</span> new <span class="ot">$f</span> <span class="kw">;</span>
+<span class="kw">done</span></code></pre></td></tr></table>
+  </section>
+
+  <section id="comment">
+    <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+  </section>
+
+</article>
+
+<script type="text/javascript" src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
+<script type="text/javascript" src="../js/post.js"></script>
+
+
+    </div>
+    <footer id="footer">
+      @mgampkay
+    </footer>
+
+    <script type="text/javascript" src="../js/ga.js"></script>
+
+  </body>
+</html>
