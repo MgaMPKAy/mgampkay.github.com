@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>MgaMPKAy's Scala Tour</title>
+    <link rel="stylesheet" type="text/css" href="../css/default.css" />
+  </head>
+  <body>
+    <header id="header">
+      <div id="logo">
+        <a href="../">MgaMPKAy's Blog</a>
+      </div>
+      <nav id="navigation">
+        <a href="../">Home</a>
+        <a href="../about.html">About</a>
+        <a href="../archive.html">Archive</a>
+      </nav>
+    </header>
+
+    <div id="content">
+      <h1>Scala Tour</h1>
+
+      <article>
+  <div class="info">November  7, 2013</div>
+
+  <section id="article-content">
+    <p>今天终于下定决心要认真学Scala了，所以去看了<a href="http://www.scala-tour.com/">Scala Tour</a>，每一个例子都能学到关于Scala的知识，都有一些不明白的东西。下面是我在看Scala Tour是想到的问题，还有是一些“发现”。</p>
+<p>Scala Tour本来就不是Tutorial，我是想看看Scala的一些特性，方便在真正看教程的时候更有针对性，不过Scala Tour介绍的特性不多。官方的<a href="http://docs.scala-lang.org/tutorials/tour/tour-of-scala.html">A Tour of Scala</a>简直就是堆特性，入门不能看。</p>
+<h2 id="basic">Basic</h2>
+<pre class="sourceCode scala"><code class="sourceCode scala"><span class="kw">def</span> <span class="fu">square</span>(a : Int) = a * a  <span class="co">// 可以从参数类型和函数体推导出返回值的类型</span>
+
+<span class="kw">def</span> <span class="fu">squereDouble</span>(a: Int):Double = a * a  <span class="co">// Int类型的返回值隐式转换到Double?</span>
+
+<span class="kw">val</span> logEnable = <span class="kw">true</span>
+
+<span class="co">// Call by name</span>
+<span class="kw">def</span> <span class="fu">log</span>(msg: =&gt; String) =
+    <span class="kw">if</span> (logEnable) <span class="fu">println</span>(msg)
+
+<span class="kw">val</span> MSG = <span class="st">&quot;programing is running&quot;</span>
+
+<span class="fu">log</span>(<span class="st">&quot;Programing is running&quot;</span>+ <span class="dv">1</span> / <span class="dv">0</span>)  <span class="co">// 字符串+数字不是应该是个类型错误吗？</span>
+
+<span class="co">// 定义类</span>
+<span class="kw">class</span> <span class="fu">Person</span>(<span class="kw">val</span> firstName: String, <span class="kw">val</span> lastName: String) {
+
+    <span class="kw">private</span> <span class="kw">var</span> _age = <span class="dv">0</span>
+    <span class="kw">def</span> age = _age        <span class="co">// 推导出类型age方法连签名都可以省了</span>
+
+    <span class="kw">def</span> age_=(newAge: Int) = _age = newAge
+    <span class="co">// 和之前看到的函数定义方法都不同，中间是 =&gt;，而且调用时还能省掉下划线和括号</span>
+}
+
+<span class="co">// Duck Typing</span>
+<span class="kw">def</span> <span class="fu">withClose</span>(closeAble: { <span class="kw">def</span> <span class="fu">close</span>(): Unit },  <span class="co">// 所有定了close方法的对象</span>
+    op: { <span class="kw">def</span> <span class="fu">close</span>(): Unit } =&gt; Unit) {
+    <span class="co">// 又重复了一遍那个Duck type，有简写方法吗？</span>
+    <span class="kw">try</span> {
+        <span class="fu">op</span>(closeAble)
+    } <span class="kw">finally</span> {
+        closeAble.<span class="fu">close</span>()
+    }
+}
+
+<span class="co">// Generic</span>
+<span class="co">// &lt;: 表示别名还是子类？</span>
+<span class="kw">def</span> withClose[A &lt;: { <span class="kw">def</span> <span class="fu">close</span>(): Unit }, B](closeAble: A)
+  (f: A =&gt; B): B =
+  <span class="kw">try</span> {
+    <span class="fu">f</span>(closeAble)
+  } <span class="kw">finally</span> {
+    closeAble.<span class="fu">close</span>()
+  }
+
+<span class="co">// Traits</span>
+<span class="kw">trait</span> ForEachAble[A] {
+  <span class="co">// 直接拿到了扩展了这个trait的类的iterator字段？</span>
+  <span class="co">// 如果一个类没有这个字段，是不是不能扩展这个trait？</span>
+  <span class="kw">def</span> iterator: java.<span class="fu">util</span>.<span class="fu">Iterator</span>[A]
+
+  <span class="kw">def</span> <span class="fu">foreach</span>(f: A =&gt; Unit) = {
+    <span class="kw">val</span> iter = iterator
+    <span class="kw">while</span> (iter.<span class="fu">hasNext</span>)
+      <span class="fu">f</span>(iter.<span class="fu">next</span>)
+  }
+}</code></pre>
+<h2 id="functional">Functional</h2>
+<pre class="sourceCode scala"><code class="sourceCode scala"><span class="co">// Pattern Matching</span>
+<span class="kw">def</span> <span class="fu">fibonacci</span>(in: Any): Int = in <span class="kw">match</span> {  <span class="co">// 参数类型是Any</span>
+    <span class="kw">case</span> <span class="dv">0</span> =&gt; <span class="dv">0</span>
+    <span class="kw">case</span> <span class="dv">1</span> =&gt; <span class="dv">1</span>
+    <span class="kw">case</span> n: Int <span class="kw">if</span> (n &gt; <span class="dv">1</span>) =&gt; <span class="fu">fibonacci</span>(n - <span class="dv">1</span>) + <span class="fu">fibonacci</span>(n - <span class="dv">2</span>)
+    <span class="kw">case</span> n : String =&gt; <span class="fu">fibonacci</span>(n.<span class="fu">toInt</span>)
+    <span class="co">// 模式匹配可以匹配不同类型，haskell好像要cast+Dynamic+view pattern？</span>
+    <span class="kw">case</span> _ =&gt; <span class="dv">0</span>
+}
+
+<span class="co">// Case Class 有点像ADT</span>
+<span class="kw">abstract</span> <span class="kw">class</span> Expr
+
+<span class="kw">case</span> <span class="kw">class</span> <span class="fu">FibonacciExpr</span>(n: Int) <span class="kw">extends</span> Expr {
+  <span class="fu">require</span>(n &gt;= <span class="dv">0</span>)  <span class="co">// 简直就ADT + smart constructor</span>
+}
+<span class="kw">case</span> <span class="kw">class</span> <span class="fu">SumExpr</span>(a: Expr, b: Expr) <span class="kw">extends</span> Expr
+
+<span class="co">// Ruby's power is from magic, but Scala's power is from science. 2333</span></code></pre>
+<h2 id="concurrent">Concurrent</h2>
+<pre class="sourceCode scala"><code class="sourceCode scala"> <span class="co">// actor dsl是怎样实现的？</span>
+<span class="kw">val</span> fromURL = <span class="fu">actor</span>(<span class="kw">new</span> Act {
+  become {
+    <span class="co">// sender是那里来的？</span>
+    <span class="kw">case</span> url: String =&gt; sender ! scala.<span class="fu">io</span>.<span class="fu">Source</span>.<span class="fu">fromURL</span>(url)
+      .<span class="fu">getLines</span>().<span class="fu">mkString</span>(<span class="st">&quot;</span><span class="ch">\n</span><span class="st">&quot;</span>)
+  }
+})</code></pre>
+<h2 id="practice">Practice</h2>
+<pre class="sourceCode scala"><code class="sourceCode scala"><span class="co">// Extractor好像view pattern</span>
+<span class="kw">object</span> Email {
+  <span class="kw">def</span> <span class="fu">unapply</span>(str: String): Option[(String,String)] =
+    <span class="kw">new</span> <span class="fu">Regex</span>(<span class="st">&quot;&quot;&quot;(.*)@(.*)&quot;&quot;&quot;</span>)
+      .<span class="fu">unapplySeq</span>(str).<span class="fu">get</span> <span class="kw">match</span> {
+      <span class="kw">case</span> user :: domain :: Nil =&gt; Some(user, domain)
+      <span class="kw">case</span> _ =&gt; None
+    }
+}
+
+<span class="co">// implicit 是在词法作用域里有效?</span>
+<span class="kw">implicit</span> <span class="kw">def</span> <span class="fu">strToDate</span>(str: String) =
+  <span class="kw">new</span> SimpleDateFormat(<span class="st">&quot;yyyy-MM-dd&quot;</span>).<span class="fu">parse</span>(str)</code></pre>
+<h2 id="最后">最后</h2>
+<p>最感兴趣的是implicit、实现DSL的方法，还有一些A Tour of Scala里的高级特性。</p>
+  </section>
+
+  <section id="comment">
+    <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+  </section>
+
+</article>
+
+<script type="text/javascript" src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
+<script type="text/javascript" src="../js/post.js"></script>
+
+
+    </div>
+    <footer id="footer">
+      @mgampkay
+    </footer>
+
+    <script type="text/javascript" src="../js/ga.js"></script>
+
+  </body>
+</html>

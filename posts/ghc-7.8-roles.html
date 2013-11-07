@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>MgaMPKAy's GHC 7.8新语言特性: Roles</title>
+    <link rel="stylesheet" type="text/css" href="../css/default.css" />
+  </head>
+  <body>
+    <header id="header">
+      <div id="logo">
+        <a href="../">MgaMPKAy's Blog</a>
+      </div>
+      <nav id="navigation">
+        <a href="../">Home</a>
+        <a href="../about.html">About</a>
+        <a href="../archive.html">Archive</a>
+      </nav>
+    </header>
+
+    <div id="content">
+      <h1>GHC 7.8新语言特性: Roles</h1>
+
+      <article>
+  <div class="info">November  5, 2013</div>
+
+  <section id="article-content">
+    <p>Roles用来解决<code>GeneralizedNewtypeDeriving</code>(GND)和其他语言扩展交互时导致类型系统不可靠的问题。</p>
+<h2 id="newtype和gnd">newtype和GND</h2>
+<p>Haskell的<code>newtype</code>可以在不引入运行时消耗的情况下构造新类型。</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">newtype</span> <span class="dt">Age</span> <span class="fu">=</span> <span class="dt">MkAge</span> <span class="dt">Int</span></code></pre>
+<p>Age类型在运行时就是一个Int，不需要额外的构造子，理想情况下这是一种没有消耗的抽象。</p>
+<p>GND就是利用了newtype和底层表示的同构关系，自动派生出type class的实例。</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">class</span> <span class="dt">Inc</span> a <span class="kw">where</span>
+<span class="ot">    inc ::</span> a <span class="ot">-&gt;</span> a
+
+<span class="kw">instance</span> <span class="dt">Inc</span> <span class="dt">Int</span> <span class="kw">where</span>
+    inc <span class="fu">=</span> (<span class="fu">+</span><span class="dv">1</span>)
+
+<span class="co">-- StandaloneDeriving</span>
+<span class="kw">deriving</span> <span class="kw">instance</span> <span class="dt">Inc</span> <span class="dt">Age</span></code></pre>
+<p>newtype和GND都是很有用的特性，经常看到有人用这方法派生mtl里的各种类。</p>
+<h2 id="玩坏类型系统">玩坏类型系统</h2>
+<p>这日子过的很好，直到遇上了GADT和type family。这两个扩展都有一个特点，就是根据类型做出不同选择。</p>
+<p>例如年龄可以分为年轻和永远的17岁，数字可以分成1、2、⑨：</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">AgeType</span> <span class="fu">=</span> <span class="dt">Young</span> <span class="fu">|</span> <span class="dt">Seventeen</span>
+
+<span class="kw">data</span> <span class="dt">IntType</span> <span class="fu">=</span> <span class="dt">One</span> <span class="fu">|</span> <span class="dt">Two</span> <span class="fu">|</span> <span class="dt">Nine</span></code></pre>
+<p>我们自然可以把分类函数通过type class 重载：</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">class</span> <span class="dt">Classify</span> a b <span class="kw">where</span>
+<span class="ot">    classify ::</span> a <span class="ot">-&gt;</span> b</code></pre>
+<p>这样可以吗？还不够，还要加上a、b间的函数依赖。函数依赖<sup><a href="#fn1" class="footnoteRef" id="fnref1">1</a></sup>？为什么不用type family呢：</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">type</span> family <span class="dt">TypeOf</span><span class="ot"> a ::</span> <span class="fu">*</span>
+<span class="kw">type</span> <span class="kw">instance</span> <span class="dt">TypeOf</span> <span class="dt">Int</span> <span class="fu">=</span> <span class="dt">IntType</span>
+<span class="kw">type</span> <span class="kw">instance</span> <span class="dt">TypeOf</span> <span class="dt">Age</span> <span class="fu">=</span> <span class="dt">AgeType</span>
+
+<span class="kw">class</span> <span class="dt">Classify</span> a <span class="kw">where</span>
+<span class="ot">    classify ::</span> a <span class="ot">-&gt;</span> <span class="dt">TypeOf</span> a
+
+<span class="kw">instance</span> <span class="dt">Classify</span> <span class="dt">Int</span> <span class="kw">where</span>
+    classify <span class="dv">1</span> <span class="fu">=</span> <span class="dt">One</span>
+    classify <span class="dv">2</span> <span class="fu">=</span> <span class="dt">Two</span>
+    classify _ <span class="fu">=</span> <span class="dt">Nine</span>
+
+<span class="kw">deriving</span> <span class="kw">instance</span> <span class="dt">Classify</span> <span class="dt">Age</span>
+
+<span class="ot">bad ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">AgeType</span>
+bad <span class="fu">=</span> classify <span class="fu">.</span> <span class="dt">MkAge</span></code></pre>
+<p>因为Age的Classify实例是从Int派生的，所实际上bad使用的是Int的Classify实例，bad就是把一个Age里的Int转成IntType，然后再转成AgeType。在生成的core里可以看到bad居然能把IntType直接类型强转成AgeType（因为被inline了，看不到字典传递）。</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">bad ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">AgeType</span>
+bad <span class="fu">=</span>
+  \ (<span class="ot">x ::</span> <span class="dt">Int</span>) <span class="ot">-&gt;</span>
+    <span class="kw">case</span> x <span class="kw">of</span> _ { <span class="dt">I</span><span class="fu">#</span> ds <span class="ot">-&gt;</span>
+    <span class="kw">case</span> ds <span class="kw">of</span> _ {
+      __<span class="dt">DEFAULT</span> <span class="ot">-&gt;</span> <span class="dt">Nine</span>
+        <span class="ot">`cast`</span> (<span class="dt">Sym</span> <span class="fu">&lt;</span>(<span class="dt">TFCo</span><span class="fu">:</span><span class="dt">R</span><span class="fu">:</span><span class="dt">TypeOfInt</span>)<span class="fu">&gt;</span> ;
+		        (<span class="dt">TypeOf</span> (<span class="dt">Sym</span> <span class="fu">&lt;</span>(<span class="dt">NTCo</span><span class="fu">:</span><span class="dt">Age</span>)<span class="fu">&gt;</span>) ; <span class="fu">&lt;</span><span class="dt">TFCo</span><span class="fu">:</span><span class="dt">R</span><span class="fu">:</span><span class="dt">TypeOfAge</span><span class="fu">&gt;</span>)
+<span class="ot">                ::</span> <span class="dt">IntType</span> <span class="fu">~#</span> <span class="dt">AgeType</span>);
+      <span class="dv">1</span> <span class="ot">-&gt;</span> <span class="dt">One</span>
+        <span class="ot">`cast`</span> (<span class="dt">Sym</span> <span class="fu">&lt;</span>(<span class="dt">TFCo</span><span class="fu">:</span><span class="dt">R</span><span class="fu">:</span><span class="dt">TypeOfInt</span>)<span class="fu">&gt;</span> ;
+		        (<span class="dt">TypeOf</span> (<span class="dt">Sym</span> <span class="fu">&lt;</span>(<span class="dt">NTCo</span><span class="fu">:</span><span class="dt">Age</span>)<span class="fu">&gt;</span>) ; <span class="fu">&lt;</span><span class="dt">TFCo</span><span class="fu">:</span><span class="dt">R</span><span class="fu">:</span><span class="dt">TypeOfAge</span><span class="fu">&gt;</span>)
+<span class="ot">                ::</span> <span class="dt">IntType</span> <span class="fu">~#</span> <span class="dt">AgeType</span>);
+      <span class="dv">2</span> <span class="ot">-&gt;</span> <span class="dt">Two</span>
+        <span class="ot">`cast`</span> (<span class="dt">Sym</span> <span class="fu">&lt;</span>(<span class="dt">TFCo</span><span class="fu">:</span><span class="dt">R</span><span class="fu">:</span><span class="dt">TypeOfInt</span>)<span class="fu">&gt;</span> ;
+		        (<span class="dt">TypeOf</span> (<span class="dt">Sym</span> <span class="fu">&lt;</span>(<span class="dt">NTCo</span><span class="fu">:</span><span class="dt">Age</span>)<span class="fu">&gt;</span>) ; <span class="fu">&lt;</span><span class="dt">TFCo</span><span class="fu">:</span><span class="dt">R</span><span class="fu">:</span><span class="dt">TypeOfAge</span><span class="fu">&gt;</span>)
+<span class="ot">                ::</span> <span class="dt">IntType</span> <span class="fu">~#</span> <span class="dt">AgeType</span>)
+    }
+    }</code></pre>
+<p>类似的，利用GND和type family还能做出<code>unsafeCoerce :: a -&gt; b</code>，总之就是把类型系统玩坏了。（GND还有其他问题，因为还没解决，就不先说了<a href="http://ghc.haskell.org/trac/ghc/ticket/5498" title="Generalized newtype deriving allows creating of instances I can't create by hand">1</a>）</p>
+<h2 id="为什么会这样">为什么会这样？</h2>
+<p>从上面的例子可以看到，GND把Age和Int当作同一个类型，而type family又区分Age和Int，结果就是GND和type family混淆了运行时表示等价（representational equality）和类型等价（nominal equality），在不合适的地方重用了同一个type class实例，再进行了错误的强转。</p>
+<p>落到实现上，newtype是通过在core里进行类型强转实现的。GND派生实例时直接了利用newtype不区分类型的运行表示的特点，重用了type class实例，然后type family、GADT又要求类型不同的结果，结果就是在core里把那个被重用的type class实例的结果强转到其他类型。</p>
+<h2 id="roles">Roles</h2>
+<p>但是，我们能直接禁止GND和type Family的交互吗？GND用的好还是很方便的，所以应该区分什么时候是GND是可行的，什么时候是有害的。</p>
+<p>观察发现，只要一个类型参数在type family、GADT和type class里不被检查（inspect）区分，不作为其他类型参数的参数，那么就可以重用这个类型参数的type class实例，最后的类型强转是安全的。这样的类型参数就充当representational的角色，表示newtype的实例和它的实例可以是相同的。</p>
+<p>而对于其他被检查的类型参数，其newtype的实例应该是不同的，这样的类型参数充当nominal的角色，不同名字的类型要有不同的实例。</p>
+<blockquote>
+<p>GeneralizedNewtypeDeriving works only with classes whose last type parameter is at role representational.</p>
+</blockquote>
+<p>在上面的Inc类里，类型参数a没有被检查，inc直接就返回了同样类型的a，所以a是representational的，所以a的newtype可以重用a的type class实例。</p>
+<p>在上面的TypeOf会根据a的不同返回不同的类型，所以这个a是nominal的。同理，Classify里的a也是nomimal的，所以a的newtype不能重用a的type class实例，应该禁止GND派生。</p>
+<p>还有第三种role: phantom，主要用在phantom type，和消除某些情况下newtype转换的消耗（详见GHC7.8的Coercible）。</p>
+<p>Role的推导由编译器完成，也可以手写注解，加强role的限制。</p>
+<h2 id="参考">参考</h2>
+<ol style="list-style-type: decimal">
+<li><a href="http://ghc.haskell.org/trac/ghc/wiki/Roles">GHC Wiki: Roles</a></li>
+<li><a href="http://typesandkinds.wordpress.com/2013/08/15/roles-a-new-feature-of-ghc/">Roles: a new feature of GHC</a></li>
+<li><a href="http://joyoftypes.blogspot.com/2012/08/generalizednewtypederiving-is.html">GeneralizedNewtypeDeriving is Profoundly Unsafe</a></li>
+</ol>
+<div class="footnotes">
+<hr />
+<ol>
+<li id="fn1"><p>在这个例子里函数依赖和GND没办法一起用，只能手写实例<a href="#fnref1">↩</a></p></li>
+</ol>
+</div>
+  </section>
+
+  <section id="comment">
+    <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+  </section>
+
+</article>
+
+<script type="text/javascript" src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
+<script type="text/javascript" src="../js/post.js"></script>
+
+
+    </div>
+    <footer id="footer">
+      @mgampkay
+    </footer>
+
+    <script type="text/javascript" src="../js/ga.js"></script>
+
+  </body>
+</html>
