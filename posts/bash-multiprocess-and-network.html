@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>MgaMPKAy's Bash多进程和访问网络</title>
+    <link rel="stylesheet" type="text/css" href="../css/default.css" />
+  </head>
+  <body>
+    <header id="header">
+      <div id="logo">
+        <a href="../">MgaMPKAy's Blog</a>
+      </div>
+      <nav id="navigation">
+        <a href="../">Home</a>
+        <a href="../about.html">About</a>
+        <a href="../archive.html">Archive</a>
+      </nav>
+    </header>
+
+    <div id="content">
+      <h1>Bash多进程和访问网络</h1>
+
+      <article>
+  <div class="info">November  7, 2013</div>
+
+  <section id="article-content">
+    <p>真心不想用Bash做这事。</p>
+<h2 id="获得http状态">获得HTTP状态</h2>
+<p>这么简单的功能，还是比新开一个curl要慢。</p>
+<pre class="sourceCode bash"><code class="sourceCode bash"><span class="kw">function</span><span class="fu"> get_http_status()</span> <span class="kw">{</span>
+    <span class="co"># 去掉http://</span>
+    <span class="kw">local</span> <span class="ot">url=${1#</span>http://<span class="ot">}</span>
+
+    <span class="co"># 获得端口</span>
+    <span class="kw">local</span> <span class="ot">port=</span>80
+    <span class="kw">if [[</span> <span class="ot">$url</span> =~ :([0-9]+)<span class="kw"> ]]</span>; <span class="kw">then</span>
+	<span class="ot">port=${BASH_REMATCH[1]}</span>
+    <span class="kw">fi</span>
+
+    <span class="co"># 获得主机</span>
+    <span class="kw">if [[</span> <span class="ot">$url</span> =~ ([^:/]*)<span class="kw"> ]]</span>; <span class="kw">then</span>
+	<span class="ot">host=${BASH_REMATCH[1]}</span>
+    <span class="kw">fi</span>
+
+    <span class="co"># 获得路径</span>
+    <span class="kw">local</span> <span class="ot">query=${url#</span>*/<span class="ot">}</span>
+    <span class="kw">if [[</span> <span class="ot">$host</span> <span class="ot">=</span> <span class="ot">$query</span> || <span class="ot">$host</span>:<span class="ot">$port</span> <span class="ot">=</span> <span class="ot">$query</span><span class="kw"> ]]</span>; <span class="kw">then</span>
+	<span class="ot">query=</span><span class="st">&quot;&quot;</span>
+    <span class="kw">fi</span>
+
+    <span class="co"># 连接</span>
+    <span class="kw">exec</span> <span class="kw">3&lt;&gt;</span>/dev/tcp/<span class="ot">$host</span>/<span class="ot">$port</span>
+    <span class="co">#发HEAD请求</span>
+    <span class="kw">echo</span> -e <span class="st">&quot;HEAD /</span><span class="ot">$query</span><span class="st"> HTTP/1.1\r\nConnection: close\r\n\r\n&quot;</span> <span class="kw">&gt;&amp;3</span>
+    <span class="co"># 读状态</span>
+    <span class="kw">read</span> <span class="ot">status</span> <span class="kw">&lt;&amp;3</span>
+    <span class="kw">echo</span> <span class="ot">$1</span>:<span class="ot">${status:9:3}</span>
+<span class="kw">}</span></code></pre>
+<p>顺便练了练正则表达式，好麻烦。</p>
+<h2 id="coproc多进程">coproc多进程</h2>
+<p>只是把文件分割然后用多个进程处理，最后合并。</p>
+<pre class="sourceCode bash"><code class="sourceCode bash"><span class="co"># 处理一个文件</span>
+<span class="fu">loop_file()</span> <span class="kw">{</span>
+    <span class="kw">local</span> <span class="ot">input_file=$1</span>
+    <span class="kw">local</span> <span class="ot">output_file=$2</span>
+
+    <span class="kw">mapfile</span> urls <span class="kw">&lt;</span> <span class="ot">$input_file</span>
+    <span class="kw">for</span> <span class="kw">url</span> in <span class="ot">${urls[@]}</span> <span class="kw">;</span> <span class="kw">do</span>
+            <span class="kw">get_http_status</span> <span class="ot">$url</span> <span class="kw">&gt;&gt;</span> <span class="ot">$output_file</span>
+    <span class="kw">done</span>
+<span class="kw">}</span>
+
+<span class="co"># 用coproc在子shell异步处理各个文件</span>
+<span class="kw">for</span> <span class="kw">f</span> in input_file*<span class="kw">;</span> <span class="kw">do</span>
+    <span class="co"># 因为coproc不把第一个参数做变量展开，只好用eval展开，再传给coproc</span>
+    <span class="kw">eval</span> <span class="st">&quot;coproc </span><span class="ot">$f</span><span class="st"> { loop_file </span><span class="ot">$f</span><span class="st"> output-</span><span class="ot">$f</span><span class="st">; }&quot;</span>
+<span class="kw">done</span>
+
+<span class="co"># 用wait等待全部的子shell完成</span>
+<span class="kw">for</span> <span class="kw">f</span> in <span class="ot">$input_file</span>*<span class="kw">;</span> <span class="kw">do</span>
+    <span class="ot">pid=$f_PID</span>
+    <span class="kw">wait</span> <span class="ot">${!pid}</span>
+<span class="kw">done</span>
+
+<span class="co"># 合并结果，删除中间文件</span>
+<span class="kw">for</span> <span class="kw">f</span> in $ input_file* <span class="kw">;</span> <span class="kw">do</span>
+    <span class="kw">cat</span> output-<span class="ot">$f</span> <span class="kw">&gt;&gt;</span> output.txt <span class="kw">&amp;&amp;</span> <span class="kw">rm</span> output-<span class="ot">$f</span>
+<span class="kw">done</span></code></pre>
+<p>考虑过用管道实现生产者/消费者模式，实在太复杂，最后换成文件分割。</p>
+  </section>
+
+  <section id="comment">
+    <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+  </section>
+
+</article>
+
+<script type="text/javascript" src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
+<script type="text/javascript" src="../js/post.js"></script>
+
+
+    </div>
+    <footer id="footer">
+      @mgampkay
+    </footer>
+
+    <script type="text/javascript" src="../js/ga.js"></script>
+
+  </body>
+</html>
