@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>MgaMPKAy's ExistentialQuantification的应用</title>
+    <link rel="stylesheet" type="text/css" href="../css/default.css" />
+  </head>
+  <body>
+    <header id="header">
+      <div id="logo">
+        <a href="../">MgaMPKAy's Blog</a>
+      </div>
+      <nav id="navigation">
+        <a href="../">Home</a>
+        <a href="../about.html">About</a>
+        <a href="../archive.html">Archive</a>
+      </nav>
+    </header>
+
+    <div id="content">
+      <h1>ExistentialQuantification的应用</h1>
+
+      <article>
+  <div class="info">November 17, 2013</div>
+
+  <section id="article-content">
+    <p>主要介绍一下ExistentialQuantification在Haskell里的应用，稍微提下为什么有人说这是个anti-pattern。</p>
+<h1 id="stream-fusion">Stream Fusion</h1>
+<p>先简单介绍一下stream fusion吧，stream fusion通过把列表（或其他数据结构）转换成一个通用Stream类型，然后通过rewrite rule消除中间的Stream转换，减少中间数据结构的生成实现了优化。这里我不讲优化，只讲Existential Quantification的使用。</p>
+<p>stream-fusion中有两个关键的数据类型（代码简化自stream-fusion 0.1.2.5，去掉主要用于优化的Unlifted）：</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">Stream</span> a <span class="fu">=</span> forall s <span class="ot">=&gt;</span>
+    <span class="dt">Stream</span> <span class="fu">!</span>(s <span class="ot">-&gt;</span> <span class="dt">Step</span> a s)  <span class="co">-- a stepper function</span>
+    <span class="fu">!</span>s                       <span class="co">-- an initial state</span>
+
+<span class="kw">data</span> <span class="dt">Step</span> a s <span class="fu">=</span> <span class="dt">Yield</span> a <span class="fu">!</span>s
+              <span class="fu">|</span> <span class="dt">Skip</span>    <span class="fu">!</span>s
+              <span class="fu">|</span> <span class="dt">Done</span></code></pre>
+<p>我解释一下这两个类型的作用，首先Stream维护了一个状态s和一个steppr函数，<code>stepper :: s -&gt; Step a s</code>能根据一个状态产生一个Step，通过不断调用这个stepper函数就能产生一系列的类型s和输出a。</p>
+<p>注意，Stream类型里用了一个Existential quantification，forall s，表示使用Stream a类型的<strong>用户</strong>是不知道这个s的具体是什么类型，他只知道存在着一个s而已。一个类型不明的数据是完全没用的，所以Stream a还提供了stepper函数，这个函数刚好能接受s类型的参数。这么说当用户有一个Stream a类型的数据时，他能做的就是用这个s调用这个stepper函数，这可能产生一个新的s1，s1和s的类型是相同的，用户可以继续新状态调用stepper，一直迭代到Done。</p>
+<p>一句话总结：状态对用户是透明的，用户不知道具体状态是什么，只能不断产生更多的状态和输出值。</p>
+<p>如果不用Existential quantification，能实现同样的效果吗？</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">MyStream</span> a s <span class="fu">=</span> <span class="dt">Stream</span> <span class="fu">!</span>(s <span class="ot">-&gt;</span> <span class="dt">Step</span> a s) <span class="fu">!</span>s</code></pre>
+<p>我们同样可以实现自然数流和转换到列表：</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">nats ::</span> <span class="dt">StreamE</span> <span class="dt">Int</span> <span class="dt">Int</span>
+nats <span class="fu">=</span> <span class="dt">StreamE</span> next <span class="dv">0</span>
+  <span class="kw">where</span>
+    next s <span class="fu">=</span> <span class="dt">Yield</span> s (s <span class="fu">+</span> <span class="dv">1</span>)
+
+<span class="ot">toList ::</span> <span class="dt">StreamE</span> a s <span class="ot">-&gt;</span> [a]
+toList (<span class="dt">StreamE</span> f s') <span class="fu">=</span> loop s'
+  <span class="kw">where</span>
+    loop s <span class="fu">=</span>
+        <span class="kw">case</span> f s <span class="kw">of</span>
+          <span class="dt">Done</span> <span class="ot">-&gt;</span> []
+          <span class="dt">Skip</span> s1 <span class="ot">-&gt;</span> loop s1
+          <span class="dt">Yield</span> a s1 <span class="ot">-&gt;</span> a <span class="fu">:</span> loop s1</code></pre>
+<p>注意这里nats暴露了状态的类型Int，这有什么影响？我们实现一个<code>takeS :: Int -&gt; Stream a s -&gt; Stream a s</code>来截取流的前n项。</p>
+<p>你要先试试。</p>
+<p>经过一番尝试之后，我发现takeS需要维护多一个状态来记录还要取多少个值，即状态的类型是要改变的：</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">takeS ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Stream</span> a s <span class="ot">-&gt;</span> <span class="dt">Stream</span> a (s, <span class="dt">Int</span>)
+takeS n (<span class="dt">StreamE</span> f s) <span class="fu">=</span> <span class="dt">StreamE</span> next (s, n)
+  <span class="kw">where</span>
+    next (s, <span class="dv">0</span>) <span class="fu">=</span> <span class="dt">Done</span>
+    next (s, n) <span class="fu">=</span>
+        <span class="kw">case</span> f s <span class="kw">of</span>
+          <span class="dt">Done</span> <span class="ot">-&gt;</span> <span class="dt">Done</span>
+          <span class="dt">Skip</span> s1 <span class="ot">-&gt;</span> <span class="dt">Skip</span> (s1, n)
+          <span class="dt">Yield</span> a s1 <span class="ot">-&gt;</span> <span class="dt">Yield</span> a (s1, n <span class="fu">-</span> <span class="dv">1</span>)</code></pre>
+<p>这有问题吗？类型难看是个问题，用多了状态类型会越来越大，大到一定程度你就完全不想写类型了：</p>
+<pre><code>takeS 10 $ takeS 10 $ takeS 10 $ nats :: StreamE Int (((Int, Int), Int), Int)</code></pre>
+<p>第二问题是，用户可以修改状态了：</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">takeMore ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">StreamE</span> a (s, <span class="dt">Int</span>) <span class="ot">-&gt;</span> <span class="dt">StreamE</span> a (s, <span class="dt">Int</span>)
+takeMore m (<span class="dt">StreamE</span> f (s, n)) <span class="fu">=</span> <span class="dt">StreamE</span> f (s, n <span class="fu">+</span> m)
+
+<span class="co">{--</span>
+<span class="co">ghci&gt; toList $ takeMore 5 $ takeS 10 nats</span>
+<span class="co">[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14]</span>
+<span class="co">--}</span></code></pre>
+<p>这能力真的有必要暴露给用户吗？为了保证流和函数可以放心地组合，每个流的状态都应该要隐藏的。</p>
+<h1 id="ghc-io-manager">GHC IO Manager</h1>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">Backend</span> <span class="fu">=</span> forall a<span class="fu">.</span> <span class="dt">Backend</span> {
+      _<span class="ot">beState ::</span> <span class="fu">!</span>a
+
+    <span class="co">-- | Poll backend for new events.  The provided callback is called</span>
+    <span class="co">-- once per file descriptor with new events.</span>
+    , _<span class="ot">bePoll ::</span> a                         <span class="co">-- backend state</span>
+              <span class="ot">-&gt;</span> <span class="dt">Timeout</span>                   <span class="co">-- timeout in milliseconds</span>
+              <span class="ot">-&gt;</span> (<span class="dt">Fd</span> <span class="ot">-&gt;</span> <span class="dt">Event</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ())    <span class="co">-- I/O callback</span>
+              <span class="ot">-&gt;</span> <span class="dt">IO</span> ()
+
+    <span class="co">-- | Register, modify, or unregister interest in the given events</span>
+    <span class="co">-- on the given file descriptor.</span>
+    , _<span class="ot">beModifyFd ::</span> a
+                  <span class="ot">-&gt;</span> <span class="dt">Fd</span>     <span class="co">-- file descriptor</span>
+                  <span class="ot">-&gt;</span> <span class="dt">Event</span>  <span class="co">-- old events to watch for ('mempty' for new)</span>
+                  <span class="ot">-&gt;</span> <span class="dt">Event</span>  <span class="co">-- new events to watch for ('mempty' to delete)</span>
+                  <span class="ot">-&gt;</span> <span class="dt">IO</span> ()
+
+    , _<span class="ot">beDelete ::</span> a <span class="ot">-&gt;</span> <span class="dt">IO</span> ()
+    }
+
+<span class="ot">poll ::</span> <span class="dt">Backend</span> <span class="ot">-&gt;</span> <span class="dt">Timeout</span> <span class="ot">-&gt;</span> (<span class="dt">Fd</span> <span class="ot">-&gt;</span> <span class="dt">Event</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()) <span class="ot">-&gt;</span> <span class="dt">IO</span> ()
+<span class="ot">modifyFd ::</span> <span class="dt">Backend</span> <span class="ot">-&gt;</span> <span class="dt">Fd</span> <span class="ot">-&gt;</span> <span class="dt">Event</span> <span class="ot">-&gt;</span> <span class="dt">Event</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</code></pre>
+<p>GHC在不同OS要用不同的IO事件处理机制（epoll、kqueue之类的），这个Backend就抽象了这些不同的后端。其实和strem-fusion很像，有个类型不明的状态（_beState），还有操做这个状态的函数，不多说了。</p>
+<h1 id="anti-pattern">Anti-pattern?</h1>
+<p>Existential quantification很好用，但是有些时候是没必要的，有些可以用其他方法实现，而且扩展性更好。我的理解是，Existential quantification让你不知道具体类型，你只能通过同时声明的那些函数去操作它，就像上面stream-fusion的例子一样，其实你丢失了一些类型信息，放弃了一些功能。等我有了更好的理解再详细写写。</p>
+<blockquote>
+<p>Functions are the masters of reuse: when you use an advanced feature, you need a yet more advanced feature to abstract over it (think: classes &lt; existential types &lt; universally quantified constraints &lt; unknown). But all you need to abstract over a function is another function.</p>
+<p>— Luke Palmer</p>
+</blockquote>
+<h1 id="参考">参考</h1>
+<ol style="list-style-type: decimal">
+<li><a href="http://lukepalmer.wordpress.com/2010/01/24/haskell-antipattern-existential-typeclass/">Haskell Antipattern: Existential Typeclass</a></li>
+<li><a href="http://www.reddit.com/r/haskell/comments/1nh2xe/the_socalled_existential_antipattern_vs_record_of/">The so-called existential antipattern vs. record of functions</a></li>
+</ol>
+  </section>
+
+  <section id="comment">
+    <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+  </section>
+
+</article>
+
+<script type="text/javascript" src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
+<script type="text/javascript" src="../js/post.js"></script>
+
+
+    </div>
+    <footer id="footer">
+      @mgampkay
+    </footer>
+
+    <script type="text/javascript" src="../js/ga.js"></script>
+
+  </body>
+</html>
