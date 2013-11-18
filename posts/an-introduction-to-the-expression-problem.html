@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>MgaMPKAy's Expression Problem简介</title>
+    <link rel="stylesheet" type="text/css" href="../css/default.css" />
+  </head>
+  <body>
+    <header id="header">
+      <div id="logo">
+        <a href="../">MgaMPKAy's Blog</a>
+      </div>
+      <nav id="navigation">
+        <a href="../">Home</a>
+        <a href="../about.html">About</a>
+        <a href="../archive.html">Archive</a>
+      </nav>
+    </header>
+
+    <div id="content">
+      <h1>Expression Problem简介</h1>
+
+      <article>
+  <div class="info">November 18, 2013</div>
+
+  <section id="article-content">
+    <p>今天白天停电，所以看了一下设计模式，看到Vistor的时候突然想起Expression Problem，Vistor模式可以在OO里放弃数据类型的扩展来得到方法扩展，还是不能解决Expression Problem。</p>
+<p>最近Reddit Haskell上也有讨论Expression Problem<a href="http://www.reddit.com/r/haskell/comments/1quhrl/from_object_oriented_programming_to_functional/" title="From Object Oriented Programming to Functional Programming - Inheritance and the Expression Problem">3</a>，最吸引我的是codata和OCaml的polymorpic variants，已经遇到很多次了。</p>
+<p>下面是一年前在QQ空间里的一篇关于Expression Problem笔记。</p>
+<hr />
+
+<p>昨天看完了Channel 9上关于Expression Problem的两个视频（<a href="http://channel9.msdn.com/Shows/Going+Deep/C9-Lectures-Dr-Ralf-Laemmel-Advanced-Functional-Programming-The-Expression-Problem">1</a>，<a href="http://channel9.msdn.com/Shows/Going+Deep/C9-Lectures-Dr-Ralf-Laemmel-Advanced-Functional-Programming-The-Expression-Problem">2</a>），记一下笔记什么的。</p>
+<blockquote>
+<p>“The Expression Problem is a new name for an old problem. The goal is to define a datatype by cases, where one can add new cases to the datatype and new functions over the datatype, without recompiling existing code, and while retaining static type safety (e.g., no casts).” — Philip Wadler</p>
+</blockquote>
+<p>简单讲就是定义一个数据类型，然后在不用重新编译原有代码和保证静态类型安全的前提下，添加新的方法和数据类型。</p>
+<p>因为静态类型安全，所以下面都是在编译期进行类型检查的语言。</p>
+<p>基本的OO（不用超复杂的设计模式）里声明好接口，然后就可以写各种类来实现这个接口，所以数据扩展很容易，但是想添加方法的话，必须要修改接口。</p>
+<pre class="sourceCode java"><code class="sourceCode java"><span class="kw">interface</span> Expr {
+    <span class="dt">int</span> <span class="fu">eval</span>();
+}
+
+<span class="kw">class</span> Const <span class="kw">implements</span> Expr {
+    <span class="dt">int</span> i;
+    <span class="fu">Const</span>(i) { <span class="kw">this</span>.<span class="fu">i</span> = i; }
+
+    <span class="dt">int</span> <span class="fu">eval</span>() { <span class="kw">return</span> i; }
+}
+
+<span class="kw">class</span> Add <span class="kw">implements</span> Expr {
+    Expr e1, e2;
+    <span class="fu">Add</span>(Expr e1, Expr e2) {
+        <span class="kw">this</span>.<span class="fu">e1</span> = e1;
+        <span class="kw">this</span>.<span class="fu">e2</span> = e2;
+    }
+
+    <span class="dt">int</span> <span class="fu">eval</span>() {
+        <span class="kw">return</span> e1.<span class="fu">eval</span>() + e2.<span class="fu">eval</span>();
+    }
+}</code></pre>
+<p>现在要添加减法，没问题：</p>
+<pre class="sourceCode java"><code class="sourceCode java"><span class="kw">class</span> SubAdd <span class="kw">implements</span> Expr {
+    Expr e1, e2;
+
+    <span class="fu">Sub</span>(Expr e1, Expr e2) {
+        <span class="kw">this</span>.<span class="fu">e1</span> = e1;
+        <span class="kw">this</span>.<span class="fu">e2</span> = e2;
+    }
+
+    <span class="dt">int</span> <span class="fu">eval</span>(){
+        <span class="kw">return</span> e1.<span class="fu">eval</span>() - e2.<span class="fu">eval</span>();
+    }
+}</code></pre>
+<p>现在要添加prettyPrint方法，必须修改借口，还有修改各个子类。</p>
+<pre class="sourceCode java"><code class="sourceCode java"><span class="kw">interface</span> Expr {
+    <span class="dt">int</span> <span class="fu">eval</span>();
+    String <span class="fu">prettyPrint</span>();
+}
+...</code></pre>
+<p>基本的函数式编程里面可以很容易对方法进行扩展，而基本的OO对数据扩展很容易。</p>
+<p>FP里声明了（代数）数据类型之后，就可以对这个数据类型随意写函数，但是一旦修改了数据，相关的函数都要修改。</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">Expr</span> <span class="fu">=</span> <span class="dt">Const</span> <span class="dt">Int</span>
+          <span class="fu">|</span> <span class="dt">Add</span> <span class="dt">Expr</span> <span class="dt">Expr</span>
+
+eval (<span class="dt">Const</span> i) <span class="fu">=</span> i
+eval (<span class="dt">Add</span> e1 e2) <span class="fu">=</span> eval e1 <span class="fu">+</span> eval e2</code></pre>
+<p>上面这个Expr类型有两种情况，Const表示常熟和Add表示加法，eval计算一个Expr返回Int。 加个prettyPrint方法，没问题：</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell">prettyPrint (<span class="dt">Const</span> i) <span class="fu">=</span> <span class="fu">show</span> i
+prettyPrint (<span class="dt">Add</span> e1 e1) <span class="fu">=</span> prettyPrint e1 <span class="fu">++</span> <span class="st">&quot; + &quot;</span> prettyPrint e2</code></pre>
+<p>但是要增加其他情况（例如Sub）就要改Expr的声明，eval 和 prettyPrint 也要修改了。</p>
+<p>Haskell可以用type clas解决Expression Problems。</p>
+<p>先声明我们的表达式：</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">class</span> <span class="dt">Expr</span> a</code></pre>
+<p>然后有加法和常数：</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">Const</span> <span class="fu">=</span> <span class="dt">Const</span> <span class="dt">Int</span>
+<span class="kw">data</span> <span class="dt">Add</span> a  <span class="fu">=</span> <span class="dt">Add</span> a a</code></pre>
+<p>现在Const和Add是不同的类型，它们的共性就是它们都是表达式，所以声明为Expr的实例：</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">instance</span> <span class="dt">Expr</span> <span class="dt">Const</span>
+<span class="kw">instance</span> (<span class="dt">Expr</span> a) <span class="ot">=&gt;</span> <span class="dt">Expr</span> (<span class="dt">Add</span> a)</code></pre>
+<p>然后把eval也分一个type class里：</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">class</span> (<span class="dt">Expr</span> a) <span class="fu">=</span> <span class="fu">&gt;</span> <span class="dt">Evaluable</span> a <span class="kw">where</span>
+<span class="ot">    eval ::</span> a <span class="ot">-&gt;</span> <span class="dt">Int</span></code></pre>
+<p>只有Expr才能被计算，所以声明里有(Expr a) 的约束，然后每个Evaluable的实例都要现实eval方法：</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">instance</span> <span class="dt">Evaluable</span> <span class="dt">Const</span> <span class="kw">where</span>
+    eval (<span class="dt">Const</span> i) <span class="fu">=</span> i
+<span class="kw">instance</span> (<span class="dt">Evaluable</span> a) <span class="ot">=&gt;</span> <span class="dt">Evaluable</span> (<span class="dt">Add</span> a) <span class="kw">where</span>
+    eval (<span class="dt">Add</span> e1 e2) <span class="fu">=</span> eval e1 <span class="fu">+</span> eval e2</code></pre>
+<p>现在要添加数据类型就只要声明成Expr的实例，实现已有的方法：</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">Sub</span> a <span class="fu">=</span> <span class="dt">Sub</span> a a
+<span class="kw">instance</span> (<span class="dt">Expr</span> a) <span class="ot">=&gt;</span> <span class="dt">Expr</span> (<span class="dt">Sub</span> a)
+<span class="kw">instance</span> (<span class="dt">Evaluable</span> a) <span class="ot">=&gt;</span> <span class="dt">Evaluable</span> (<span class="dt">Sub</span> a) <span class="kw">where</span>
+    eval (<span class="dt">Sub</span> e1 e2) <span class="fu">=</span> eval e1 <span class="fu">-</span> eval e2</code></pre>
+<p>想要添加方法就再声明新的type class然后实现各个类型的实例：</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">instance</span> <span class="dt">PrettyPrintable</span>  <span class="dt">Const</span> <span class="kw">where</span>
+    prettyPrint (<span class="dt">Const</span> i) <span class="fu">=</span> <span class="fu">show</span> i
+
+<span class="kw">instance</span> (<span class="dt">PrettyPrintable</span> a) <span class="ot">=&gt;</span> <span class="dt">PrettyPrintable</span> (<span class="dt">Add</span> a) <span class="kw">where</span>
+    prettyPrint (<span class="dt">Add</span> e1 e2) <span class="fu">=</span> <span class="st">&quot;(&quot;</span> <span class="fu">++</span> prettyPrint e1 <span class="fu">++</span> <span class="st">&quot; + &quot;</span>
+                              <span class="fu">++</span> prettyPrint e2 <span class="fu">++</span> <span class="st">&quot;)&quot;</span>
+
+<span class="kw">instance</span> (<span class="dt">PrettyPrintable</span> a) <span class="ot">=&gt;</span> <span class="dt">PrettyPrintable</span> (<span class="dt">Sub</span> a) <span class="kw">where</span>
+    prettyPrint (<span class="dt">Sub</span> e1 e2) <span class="fu">=</span> <span class="st">&quot;(&quot;</span> <span class="fu">++</span> prettyPrint e1 <span class="fu">++</span> <span class="st">&quot; - &quot;</span>
+                              <span class="fu">++</span> prettyPrint e2 <span class="fu">++</span> <span class="st">&quot;)&quot;</span></code></pre>
+<p>搞定。</p>
+<p>虽然type class和接口像，都声明了要实现的方法。用Java模仿上面Haskell的做法就是声明多个接口，然后每个类都实现…糟糕，原有的类要实现新的接口就要重新编译了。</p>
+<p>也许泛型和无敌的设计模式来拯救OO了，只是我还不会。</p>
+<p>继续回到Haskell，上面解法够方便，但是现在的Const、Sub、Add是不同的类型，不能放到列表里，因列表必须同质，难道要用Tuple模拟异质列表？</p>
+<p>我知道的一个方法就是用ExistentialQuantification（存在量化？）</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">ExprBox</span> <span class="fu">=</span> forall a <span class="fu">.</span> <span class="dt">Expr</span> a <span class="ot">=&gt;</span> <span class="dt">MkExpr</span> a</code></pre>
+<p>MkExpr可以接受任意Expr的实例，然后得到ExprBox类型的东西。 然后就可以放一个列表里了：</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell">exprList <span class="fu">=</span> [<span class="dt">MkExpr</span> (<span class="dt">Const</span> <span class="dv">1</span>), <span class="dt">MkExpr</span> (<span class="dt">Add</span> (<span class="dt">Const</span> <span class="dv">1</span>) (<span class="dt">Const</span> <span class="dv">2</span>))]</code></pre>
+<p>但是这基本是没有用的…因为没有办法把里面的Expr取出来。</p>
+<p>我想对列表里的每一个ExprBox的Expr取出来，eval之：</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">ExprBox</span> <span class="fu">=</span> forall a <span class="fu">.</span> (<span class="dt">Evaluable</span> a)  <span class="ot">=&gt;</span> <span class="dt">MkExpr</span> {<span class="ot">unBox ::</span> a}
+
+<span class="kw">instance</span> <span class="dt">Expr</span> <span class="dt">ExprBox</span>
+<span class="kw">instance</span> <span class="dt">Evaluable</span> <span class="dt">ExprBox</span> <span class="kw">where</span>
+    eval (<span class="dt">MkExpr</span> e) <span class="fu">=</span> eval e</code></pre>
+<p>还要prettyPrint的话，就要增加新的约束：</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">ExprBox</span> <span class="fu">=</span> forall a <span class="fu">.</span> (<span class="dt">Evaluable</span> a, <span class="dt">PrettyPrintable</span> a)
+    <span class="ot">=&gt;</span> <span class="dt">MkExpr</span> {<span class="ot">unBox ::</span> a}
+
+<span class="kw">instance</span> <span class="dt">Expr</span> <span class="dt">ExprBox</span>
+
+<span class="kw">instance</span> <span class="dt">Evaluable</span> <span class="dt">ExprBox</span> <span class="kw">where</span>
+    eval (<span class="dt">MkExpr</span> e) <span class="fu">=</span> eval e
+
+<span class="kw">instance</span> <span class="dt">PrettyPrintable</span> <span class="dt">ExprBox</span> <span class="kw">where</span>
+    prettyPrint (<span class="dt">MkExpr</span> e) <span class="fu">=</span> prettyPrint e</code></pre>
+<p>这样下去，约束列表类表就越来越长了， 所以可以写新的type class，包含前面的约束，也是不好扩展的方法，还更麻烦了。</p>
+  </section>
+
+  <section id="comment">
+    <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+  </section>
+
+</article>
+
+<script type="text/javascript" src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
+<script type="text/javascript" src="../js/post.js"></script>
+
+
+    </div>
+    <footer id="footer">
+      @mgampkay
+    </footer>
+
+    <script type="text/javascript" src="../js/ga.js"></script>
+
+  </body>
+</html>
