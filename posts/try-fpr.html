@@ -31,7 +31,7 @@
 ghci&gt; import qualified Graphics.UI.Threepenny.Timer as Timer
 ghci&gt; import Control.Concurrent
 ghci&gt; import Control.Monad</code></pre>
-<p>首现, Timer的事件（流）是一个<code>Event ()</code>，表示内容为<code>()</code>，因为这Timer只关心时间间隔到了。</p>
+<p>首先, Timer的事件（流）是一个<code>Event ()</code>，表示内容为<code>()</code>，因为这Timer只关心时间间隔到了。</p>
 <p>通过<code>stepper</code>我们把一个Event转换成一个Behavior，然后用<code>currentValue</code>经过Behavior观察到Event当前的值。</p>
 <pre><code>ghci&gt; timer &lt;- Timer.timer
 ghci&gt; behavior &lt;- stepper () (Timer.tick timer)

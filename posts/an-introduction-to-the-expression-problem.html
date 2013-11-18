@@ -148,7 +148,7 @@ prettyPrint (<span class="dt">Add</span> e1 e1) <span class="fu">=</span> pretty
 
 <span class="kw">instance</span> <span class="dt">PrettyPrintable</span> <span class="dt">ExprBox</span> <span class="kw">where</span>
     prettyPrint (<span class="dt">MkExpr</span> e) <span class="fu">=</span> prettyPrint e</code></pre>
-<p>这样下去，约束列表类表就越来越长了， 所以可以写新的type class，包含前面的约束，也是不好扩展的方法，还更麻烦了。</p>
+<p>这样下去，约束类型的列表就越来越长了，所以又可以写新的type class，包含前面的约束，也是不好扩展的方法，还更麻烦了。</p>
   </section>
 
   <section id="comment">
