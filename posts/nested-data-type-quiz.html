@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>MgaMPKAy's 一个关于Nested data type的问题</title>
+    <link rel="stylesheet" type="text/css" href="../css/default.css" />
+  </head>
+  <body>
+    <header id="header">
+      <div id="logo">
+        <a href="../">MgaMPKAy's Blog</a>
+      </div>
+      <nav id="navigation">
+        <a href="../">Home</a>
+        <a href="../about.html">About</a>
+        <a href="../archive.html">Archive</a>
+      </nav>
+    </header>
+
+    <div id="content">
+      <h1>一个关于Nested data type的问题</h1>
+
+      <article>
+  <div class="info">November 23, 2013</div>
+
+  <section id="article-content">
+    <p>改自<a href="http://www.cs.uu.nl/foswiki/pub/GP/Schedule/DataTypesAndKinds.pdf">这里</a>。</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">Fork</span> a <span class="fu">=</span> <span class="dt">Fork</span> a a
+<span class="kw">data</span> <span class="dt">Perfect</span> a <span class="fu">=</span> <span class="dt">ZeroP</span> a
+               <span class="fu">|</span> <span class="dt">SuccP</span> (<span class="dt">Perfect</span> (<span class="dt">Fork</span> a))</code></pre>
+<p><code>Perfect a</code>表示一棵完全二叉树，现在要写个<code>toList :: Perfect a -&gt; [a]</code>函数把它转换成列表。</p>
+<p>我先试了type class:</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">class</span> <span class="dt">ToList</span> f <span class="kw">where</span>
+<span class="ot">    toList ::</span> f a <span class="ot">-&gt;</span> [a]
+
+<span class="kw">instance</span> <span class="dt">ToList</span> <span class="dt">Fork</span> <span class="kw">where</span>
+    toList (<span class="dt">Fork</span> a b) <span class="fu">=</span> [a, b]
+
+<span class="kw">instance</span> <span class="dt">ToList</span> <span class="dt">Perfect</span> <span class="kw">where</span>
+    toList (<span class="dt">ZeroP</span> a) <span class="fu">=</span> [a]
+    toList (<span class="dt">SuccP</span> f) <span class="fu">=</span> <span class="fu">concatMap</span> toList <span class="fu">$</span> toList f</code></pre>
+<p>最后一行是根据类型推出来的，感觉要递归，先看<code>toList f ::  [Fork a]</code>，然后就加上<code>concatMap toList</code>然后就搞定了，投机取巧的感觉。</p>
+<p>然后再试直接定义，怎么处理SuccP呢：</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell">toList (<span class="dt">ZeroP</span> a) <span class="fu">=</span> [a]
+toList (<span class="dt">SuccP</span> f) <span class="fu">=</span>
+    <span class="kw">case</span> f <span class="kw">of</span>
+      <span class="dt">ZeroP</span> (<span class="dt">Fork</span> x y) <span class="ot">-&gt;</span> [x, y]
+      <span class="dt">SuccP</span> f2         <span class="ot">-&gt;</span> <span class="fu">undefined</span></code></pre>
+<p>这里知道 <code>f2 :: Perfect (Fork (Fork a))</code>，递归调用<code>toList f2 ::[Fork (Fork a)]</code>，这么说还需要一个 <code>[Fork (Fork a)] -&gt; [a]</code>的函数就可以了：</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">toList ::</span> <span class="dt">Perfect</span> a <span class="ot">-&gt;</span> [a]
+toList (<span class="dt">ZeroP</span> a) <span class="fu">=</span> [a]
+toList (<span class="dt">SuccP</span> f) <span class="fu">=</span>
+    <span class="kw">case</span> f <span class="kw">of</span>
+      <span class="dt">ZeroP</span> (<span class="dt">Fork</span> x y) <span class="ot">-&gt;</span> [x, y]
+      <span class="dt">SuccP</span> f2         <span class="ot">-&gt;</span>  flatFork <span class="fu">$</span> flatFork <span class="fu">$</span> toList f2
+  <span class="kw">where</span>
+<span class="ot">    flatFork ::</span> [<span class="dt">Fork</span> a] <span class="ot">-&gt;</span> [a]
+    flatFork [] <span class="fu">=</span> []
+    flatFork ((<span class="dt">Fork</span> x y)<span class="fu">:</span>fs) <span class="fu">=</span> [x, y] <span class="fu">++</span> flatFork fs</code></pre>
+<p>还是根据类型把需要的函数补上去而已。</p>
+<p>下面再完成另一个方向的转换<sup><a href="#fn1" class="footnoteRef" id="fnref1">1</a></sup>：</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell">fromList []  <span class="fu">=</span> <span class="kw">Nothing</span>
+fromList [x] <span class="fu">=</span> <span class="kw">Just</span> <span class="fu">$</span> <span class="dt">ZeroP</span> x
+fromList xs  <span class="fu">=</span> <span class="kw">do</span>
+    <span class="kw">let</span> (h, t) <span class="fu">=</span> <span class="fu">splitAt</span> (<span class="fu">length</span> xs <span class="ot">`div`</span> <span class="dv">2</span>) xs
+    l <span class="ot">&lt;-</span> fromList t
+    r <span class="ot">&lt;-</span> fromList h
+    mergePerfect l r
+
+<span class="ot">mergePerfect ::</span> <span class="dt">Perfect</span> a <span class="ot">-&gt;</span> <span class="dt">Perfect</span> a <span class="ot">-&gt;</span> <span class="dt">Maybe</span> (<span class="dt">Perfect</span> a)
+mergePerfect (<span class="dt">ZeroP</span> a) (<span class="dt">ZeroP</span> b) <span class="fu">=</span> <span class="kw">Just</span> <span class="fu">$</span> <span class="dt">SuccP</span> (<span class="dt">ZeroP</span> (<span class="dt">Fork</span> a b))
+mergePerfect (<span class="dt">SuccP</span> a) (<span class="dt">SuccP</span> b) <span class="fu">=</span> <span class="dt">SuccP</span> <span class="fu">&lt;$&gt;</span> mergePerfect a b
+mergePerfect _ _ <span class="fu">=</span> <span class="kw">Nothing</span></code></pre>
+<p>只要分清每个表达式的类型，就很容易推出来。</p>
+<div class="footnotes">
+<hr />
+<ol>
+<li id="fn1"><p>今天凌晨想了大半个钟没想出来，一觉醒来几分钟搞定了。<a href="#fnref1">↩</a></p></li>
+</ol>
+</div>
+  </section>
+
+  <section id="comment">
+    <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+  </section>
+
+</article>
+
+<script type="text/javascript" src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
+<script type="text/javascript" src="../js/post.js"></script>
+
+
+    </div>
+    <footer id="footer">
+      @mgampkay
+    </footer>
+
+    <script type="text/javascript" src="../js/ga.js"></script>
+
+  </body>
+</html>
