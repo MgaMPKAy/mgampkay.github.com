@@ -99,7 +99,7 @@ prettyPrint (<span class="dt">Add</span> e1 e1) <span class="fu">=</span> pretty
 <pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">instance</span> <span class="dt">Expr</span> <span class="dt">Const</span>
 <span class="kw">instance</span> (<span class="dt">Expr</span> a) <span class="ot">=&gt;</span> <span class="dt">Expr</span> (<span class="dt">Add</span> a)</code></pre>
 <p>然后把eval也分一个type class里：</p>
-<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">class</span> (<span class="dt">Expr</span> a) <span class="fu">=</span> <span class="fu">&gt;</span> <span class="dt">Evaluable</span> a <span class="kw">where</span>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">class</span> (<span class="dt">Expr</span> a) <span class="ot">=&gt;</span> <span class="dt">Evaluable</span> a <span class="kw">where</span>
 <span class="ot">    eval ::</span> a <span class="ot">-&gt;</span> <span class="dt">Int</span></code></pre>
 <p>只有Expr才能被计算，所以声明里有(Expr a) 的约束，然后每个Evaluable的实例都要现实eval方法：</p>
 <pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">instance</span> <span class="dt">Evaluable</span> <span class="dt">Const</span> <span class="kw">where</span>
@@ -112,7 +112,10 @@ prettyPrint (<span class="dt">Add</span> e1 e1) <span class="fu">=</span> pretty
 <span class="kw">instance</span> (<span class="dt">Evaluable</span> a) <span class="ot">=&gt;</span> <span class="dt">Evaluable</span> (<span class="dt">Sub</span> a) <span class="kw">where</span>
     eval (<span class="dt">Sub</span> e1 e2) <span class="fu">=</span> eval e1 <span class="fu">-</span> eval e2</code></pre>
 <p>想要添加方法就再声明新的type class然后实现各个类型的实例：</p>
-<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">instance</span> <span class="dt">PrettyPrintable</span>  <span class="dt">Const</span> <span class="kw">where</span>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">class</span> (<span class="dt">Expr</span> a) <span class="ot">=&gt;</span> <span class="dt">PrettyPrintable</span> a <span class="kw">where</span>
+<span class="ot">    prettyPrint ::</span> a <span class="ot">-&gt;</span> <span class="dt">String</span>
+
+<span class="kw">instance</span> <span class="dt">PrettyPrintable</span>  <span class="dt">Const</span> <span class="kw">where</span>
     prettyPrint (<span class="dt">Const</span> i) <span class="fu">=</span> <span class="fu">show</span> i
 
 <span class="kw">instance</span> (<span class="dt">PrettyPrintable</span> a) <span class="ot">=&gt;</span> <span class="dt">PrettyPrintable</span> (<span class="dt">Add</span> a) <span class="kw">where</span>

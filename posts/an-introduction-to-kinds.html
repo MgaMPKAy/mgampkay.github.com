@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>MgaMPKAy's Kind简介</title>
+    <link rel="stylesheet" type="text/css" href="../css/default.css" />
+  </head>
+  <body>
+    <header id="header">
+      <div id="logo">
+        <a href="../">MgaMPKAy's Blog</a>
+      </div>
+      <nav id="navigation">
+        <a href="../">Home</a>
+        <a href="../about.html">About</a>
+        <a href="../archive.html">Archive</a>
+      </nav>
+    </header>
+
+    <div id="content">
+      <h1>Kind简介</h1>
+
+      <article>
+  <div class="info">November 24, 2013</div>
+
+  <section id="article-content">
+    <p>值（value/term）可以通过类型（type）进行分类，那么什么对类型进行分类呢？那就是 Kind！<sup><a href="#fn1" class="footnoteRef" id="fnref1">1</a></sup></p>
+<pre><code>      Kind
+   ----------
+      Type
+   ----------
+      Term</code></pre>
+<h1 id="基础">基础</h1>
+<p>Kind的基本文法：</p>
+<pre><code>k ::= *
+      | k -&gt; k</code></pre>
+<p>这个定义说一个kind可以是<code>*</code>，或者通过<code>-&gt;</code>和两个kind构造出一个新的kind。例子：</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="dt">Int</span><span class="ot">    ::</span> <span class="fu">*</span>
+<span class="dt">Bool</span><span class="ot">   ::</span> <span class="fu">*</span>
+<span class="dt">Maybe</span><span class="ot">  ::</span> <span class="fu">*</span> <span class="ot">-&gt;</span> <span class="fu">*</span>
+<span class="dt">Either</span><span class="ot"> ::</span> <span class="fu">*</span> <span class="ot">-&gt;</span> <span class="fu">*</span> <span class="ot">-&gt;</span> <span class="fu">*</span></code></pre>
+<p><code>*</code>表示一个值的类型的kind，<code>-&gt;</code>就像函数类型，可以用来表示类型构造子的kind。</p>
+<p>Kind描述了类型和类型构造子的结构，规范他们的组合：</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="dt">Maybe</span> <span class="dt">Bool</span><span class="ot"> ::</span> <span class="fu">*</span> <span class="co">-- ok</span>
+<span class="dt">Maybe</span> <span class="dt">Either</span>    <span class="co">-- kind mismatch</span>
+
+<span class="kw">instance</span> <span class="kw">Functor</span> <span class="dt">Maybe</span>  <span class="co">-- ok</span>
+<span class="kw">instance</span> <span class="kw">Functor</span> <span class="dt">Either</span> <span class="co">-- kind mismatch</span></code></pre>
+<h1 id="kind-polymorphism">Kind polymorphism</h1>
+<p>我们看一下几个Typeable：</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">class</span> <span class="dt">Typeable</span> (<span class="ot">t ::</span> <span class="fu">*</span>) <span class="kw">where</span>
+<span class="ot">    typeOf ::</span> t <span class="ot">-&gt;</span> <span class="dt">TypeRep</span>
+
+<span class="kw">class</span> <span class="dt">Typeable1</span> (<span class="ot">t ::</span> <span class="fu">*</span> <span class="ot">-&gt;</span> <span class="fu">*</span>) <span class="kw">where</span>
+<span class="ot">    typeOf1 ::</span> t a <span class="ot">-&gt;</span> <span class="dt">TypeRep</span>
+
+<span class="kw">class</span> <span class="dt">Typeable2</span> (<span class="ot">t ::</span> <span class="fu">*</span> <span class="ot">-&gt;</span> <span class="fu">*</span> <span class="ot">-&gt;</span> <span class="fu">*</span>) <span class="kw">where</span>
+<span class="ot">    typeOf2 ::</span> t a b <span class="ot">-&gt;</span> <span class="dt">TypeRep</span></code></pre>
+<p><code>Typeable</code>的作用是为每一个类型（kind为<code>*</code>）定义一个<code>TypeRep</code>，用做运行时的类型信息。类似的，<code>Typeable1</code>和<code>Typeable2</code>的实例可以为kind为<code>* -&gt; *</code>和 <code>* -&gt; * -&gt; *</code>的类型构造子提供类型信息。<code>typeOfN</code>的第一个参数都是没用的，因为我们只需要类型信息，不需要值。</p>
+<p>要定义这么多（一直到7）相似的type class的原因是没有多态的kind，每一个type class需要的kind都是固定的。如果能像参数化多态一样，有个kind参数来表示kind多态就好了，于是就有了 <code>PolyKinds</code>扩展。</p>
+<p>有了多态的kind之后，Typeable就可以这样定义：</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">{-# LANGUAGE PolyKinds #-}</span>           <span class="co">-- for Proxy, Typeable</span>
+<span class="ot">{-# LANGUAGE ScopedTypeVariables #-}</span> <span class="co">-- for typeOf, typeOf1 ...</span>
+
+<span class="kw">data</span> <span class="dt">Proxy</span> t <span class="fu">=</span> <span class="dt">Proxy</span>
+
+<span class="kw">class</span> <span class="dt">Typeable</span> t <span class="kw">where</span>
+<span class="ot">  typeRep ::</span> <span class="dt">Proxy</span> t <span class="ot">-&gt;</span> <span class="dt">TypeRep</span>
+
+<span class="ot">typeOf ::</span> forall a<span class="fu">.</span> <span class="dt">Typeable</span> a <span class="ot">=&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">TypeRep</span>
+typeOf _ <span class="fu">=</span> typeRep (<span class="dt">Proxy</span><span class="ot"> ::</span> <span class="dt">Proxy</span> a)
+
+<span class="ot">typeOf1 ::</span> forall a t<span class="fu">.</span> <span class="dt">Typeable</span> t <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">TypeRep</span>
+typeOf1 _ <span class="fu">=</span> typeRep (<span class="dt">Proxy</span><span class="ot"> ::</span> <span class="dt">Proxy</span> t)</code></pre>
+<p>开启<code>PolyKinds</code>之后，GHC把<code>Proxy</code>的kind推导为<code>k -&gt; *</code>，Typeable的kind为<code>k -&gt; Constraint</code>（手写也行），这里的k就像是类型参数一样，表示任意的kind。</p>
+<p>直接这样定义是不行的：</p>
+<pre><code>class Typeable (t :: k) where
+    typeRep :: t -&gt; String</code></pre>
+<p>因为<code>typeRep</code>是个函数，函数参数的king必须是<code>*</code>，那么<code>t</code>的kind就固定成<code>*</code>了，和手写的<code>k</code>是矛盾的，所以通过一个<code>Proxy :: k -&gt; *</code>，我们就能让<code>typeRep :: Proxy t -&gt; String</code>的参数的kind为<code>*</code>，而<code>t</code>的kind是任意的。</p>
+<h1 id="constraint-kinds">Constraint Kinds</h1>
+<p>在上一节，<code>Typeable</code>的kind是<code>k -&gt; Constraint</code>，Constraint是一个特殊的kind，用来表示约束。所谓约束基本上就是函数签名里写在<code>=&gt;</code>前的东西，这是很好理解的：</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">(==) ::</span> <span class="kw">Eq</span> a <span class="ot">=&gt;</span> a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Bool</span>   <span class="co">--  约束：a必须是Eq的实例</span>
+<span class="fu">print</span><span class="ot"> ::</span> <span class="kw">Show</span> a <span class="ot">=&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">IO</span> ()    <span class="co">--  约束：a必须是Show的实例</span></code></pre>
+<p><code>Show a</code>、<code>Eq a</code>这样做为一个整体，它们的kind是<code>Constraint</code>，而<code>Show</code>和<code>Eq</code>的kind就是<code>* -&gt; Constraint</code>。</p>
+<p>因为有了kind来表示约束，约束就表现得更像类型，可以通过原有的约束构建新的约束。在<a href="http://mgampkay.github.io/posts/an-introduction-to-the-expression-problem.html">Expression Problem简介</a>的最后，我正烦恼那个约束列表会越来越长，有了<code>ConstraintKinds</code>之后，我就可以为那长长约束写个type constraint synonyms：</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">{--</span>
+<span class="co">data ExprBox = forall a . (Evaluable a, PrettyPrintable a)</span>
+<span class="co">             =&gt; MkExpr {unBox :: a}</span>
+<span class="co">--}</span>
+
+<span class="kw">type</span> <span class="dt">ExprConstraint</span> a <span class="fu">=</span> (<span class="dt">Evaluable</span> a, <span class="dt">PrettyPrintable</span> a)
+
+<span class="kw">data</span> <span class="dt">ExprBox</span> <span class="fu">=</span> forall a <span class="fu">.</span> <span class="dt">ExprConstraint</span> a <span class="ot">=&gt;</span> <span class="dt">MkExpr</span> {<span class="ot">unBox ::</span> a}</code></pre>
+<p>除了能简写之外，约束还能作为参数（type-level的），我们就可以把约束抽象出来：</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">ExprBox</span> c <span class="fu">=</span> forall a <span class="fu">.</span> c a <span class="ot">=&gt;</span> <span class="dt">MkExpr</span> {<span class="ot">unBox ::</span> a}</code></pre>
+<p><code>ExprBox c</code>里的<code>c</code>的kind是<code>* -&gt; Constraint</code>，我们就能为不同的<code>ExprBox</code>使用不同的约束。</p>
+<p>例如可以这样用<code>ExprBox</code>，type class是可以部分调用（partially applied）的：</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">strs ::</span> [<span class="dt">ExprBox</span> <span class="kw">Show</span>]
+strs <span class="fu">=</span> [<span class="dt">MkExpr</span> <span class="st">&quot;S&quot;</span>, <span class="dt">MkExpr</span> (<span class="dv">2</span><span class="ot">::</span><span class="dt">Int</span>)]
+
+<span class="ot">nums ::</span> [<span class="dt">ExprBox</span> <span class="kw">Num</span>]
+nums <span class="fu">=</span> [<span class="dt">MkExpr</span> (<span class="dv">1</span><span class="ot">::</span><span class="dt">Double</span>), <span class="dt">MkExpr</span> (<span class="dv">2</span><span class="ot">::</span><span class="dt">Int</span>)]</code></pre>
+<p>但是还不能这样<sup><a href="#fn2" class="footnoteRef" id="fnref2">2</a></sup>：</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">type</span> <span class="dt">ShowNum</span> a <span class="fu">=</span> (<span class="kw">Show</span> a, <span class="kw">Num</span> a)
+
+<span class="fu">fail</span><span class="ot"> ::</span> <span class="dt">ExprBox</span> <span class="dt">ShowNum</span>
+<span class="fu">fail</span> <span class="fu">=</span> <span class="fu">undefined</span></code></pre>
+<p>因为<code>ShowNum</code>是个synonym，要完全展开，所以还没到类型检测就拒绝了<sup><a href="#fn3" class="footnoteRef" id="fnref3">3</a></sup>。一个解决方法是把<code>ShowNum</code>定义成type class<sup><a href="#fn4" class="footnoteRef" id="fnref4">4</a></sup>。</p>
+<h1 id="datatype-promotion">Datatype promotion</h1>
+<p>最后一个扩展就是<code>DataKinds</code>，简单来说就是把类型提升成kind，把数据构造子提升成类型构造子，配合GADT和type familiy的时候可以更精确地表达类型。</p>
+<p>用GADT可以实现一些简单的依赖类型，例如常见的向量：</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">Zero</span>
+<span class="kw">data</span> <span class="dt">Succ</span> a
+
+<span class="kw">data</span> <span class="dt">Vec</span><span class="ot"> ::</span> <span class="fu">*</span> <span class="ot">-&gt;</span> <span class="fu">*</span> <span class="ot">-&gt;</span> <span class="fu">*</span> <span class="kw">where</span>
+    <span class="dt">Nil</span><span class="ot">  ::</span> <span class="dt">Vec</span> <span class="dt">Zero</span> a
+    <span class="dt">Cons</span><span class="ot"> ::</span> a <span class="ot">-&gt;</span> <span class="dt">Vec</span> len a <span class="ot">-&gt;</span> <span class="dt">Vec</span> (<span class="dt">Succ</span> len) a</code></pre>
+<p>但是，<code>Vec :: * -&gt; * -&gt; *</code>和<code>Succ :: * -&gt; *</code>的kind要求太宽松了，甚至可以构造出<code>Vec (Succ  Bool) a</code>，我们想把<code>Succ</code>和<code>Vec</code>的第一个参数限制在<code>Zero</code>和用<code>Succ</code>构造的其他值，这时就可以用<code>DataKinds</code>。</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">Nat</span> <span class="fu">=</span> <span class="dt">Zero</span> <span class="fu">|</span> <span class="dt">Succ</span> <span class="dt">Nat</span>
+
+<span class="kw">data</span> <span class="dt">Vec</span><span class="ot"> ::</span> <span class="dt">Nat</span> <span class="ot">-&gt;</span> <span class="fu">*</span> <span class="ot">-&gt;</span> <span class="fu">*</span> <span class="kw">where</span>
+    <span class="dt">Nil</span><span class="ot">  ::</span> <span class="dt">Vec</span> <span class="dt">Zero</span> a
+    <span class="dt">Cons</span><span class="ot"> ::</span> a <span class="ot">-&gt;</span> <span class="dt">Vec</span> len a <span class="ot">-&gt;</span> <span class="dt">Vec</span> (<span class="dt">Succ</span> len) a
+
+<span class="ot">safeHead ::</span> <span class="dt">Vec</span> (<span class="dt">Succ</span> n) a <span class="ot">-&gt;</span> a
+safeHead (<span class="dt">Cons</span> x xs) <span class="fu">=</span> x</code></pre>
+<p>这里<code>Vec</code>第一个参数的kind变成了<code>Nat</code>，也就是说原来作为类型的<code>Nat</code>被提升成了kind，同样的<code>Succ</code>和<code>Zero</code>都被提升到了类型构造子，kind分别是<code>Nat -&gt; Nat</code>，<code>Nat</code>。</p>
+<p>把列表提升到kind，然后就能实现个简单的HList<sup><a href="#fn5" class="footnoteRef" id="fnref5">5</a></sup><sup><a href="#fn6" class="footnoteRef" id="fnref6">6</a></sup>：</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">List</span> a <span class="fu">=</span> <span class="dt">Nil</span> <span class="fu">|</span> <span class="dt">Cons</span> a (<span class="dt">List</span> a)
+
+<span class="kw">data</span> <span class="dt">HList</span><span class="ot"> ::</span> <span class="dt">List</span> <span class="fu">*</span> <span class="ot">-&gt;</span> <span class="fu">*</span> <span class="kw">where</span>
+  <span class="dt">HNil</span><span class="ot">  ::</span> <span class="dt">HList</span> <span class="dt">Nil</span>
+  <span class="dt">HCons</span><span class="ot"> ::</span> a <span class="ot">-&gt;</span> <span class="dt">HList</span> t <span class="ot">-&gt;</span> <span class="dt">HList</span> (<span class="dt">Cons</span> a t)</code></pre>
+<p><code>GHC.TypeLits</code>提供了type-level的字面量，支持自然数和字符串，可以把他们当类型用。</p>
+<h1 id="参考">参考</h1>
+<ol style="list-style-type: decimal">
+<li><a href="http://www.haskell.org/ghc/docs/7.6.3/html/users_guide/ghc-language-features.html">GHC User’s Guide 7.6.3, Chapter 7. GHC Language Features</a></li>
+<li><a href="http://blog.omega-prime.co.uk/?p=127">Constraint Kinds for GHC</a></li>
+<li><a href="https://ghc.haskell.org/trac/ghc/wiki/GhcKinds/PolyTypeable">Kind-polymorphic Typeable</a></li>
+<li><a href="https://ghc.haskell.org/trac/ghc/wiki/KindFact">Adding kind Constraint</a></li>
+</ol>
+<div class="footnotes">
+<hr />
+<ol>
+<li id="fn1"><p>GHC里kind之上是sort，GHC的sort只有一个: BOX，在之上就没了，不过好像没办法用BOX。在一些支持依赖类型的语言里还可以继续分，就像集合、集合的集合、（集合的集合）的集合…<a href="#fnref1">↩</a></p></li>
+<li id="fn2"><p>至少GHC 7.7.20130824不行<a href="#fnref2">↩</a></p></li>
+<li id="fn3"><p>过程是kind check，expand synonyms，type check<a href="#fnref3">↩</a></p></li>
+<li id="fn4"><p>有个<a href="http://www.haskell.org/haskellwiki/Context_alias">context alias提议</a>能实现类似的功能，和ConstraintKinds很相似<a href="#fnref4">↩</a></p></li>
+<li id="fn5"><p>实际的<a href="citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.101.9906">HList</a>做的要比这个简单定义多很多<a href="#fnref5">↩</a></p></li>
+<li id="fn6"><p>GHC其实对列表有语法支持<a href="#fnref6">↩</a></p></li>
+</ol>
+</div>
+  </section>
+
+  <section id="comment">
+    <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+  </section>
+
+</article>
+
+<script type="text/javascript" src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
+<script type="text/javascript" src="../js/post.js"></script>
+
+
+    </div>
+    <footer id="footer">
+      @mgampkay
+    </footer>
+
+    <script type="text/javascript" src="../js/ga.js"></script>
+
+  </body>
+</html>
