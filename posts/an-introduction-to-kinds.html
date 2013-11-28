@@ -126,7 +126,7 @@ nums <span class="fu">=</span> [<span class="dt">MkExpr</span> (<span class="dv"
 <span class="ot">safeHead ::</span> <span class="dt">Vec</span> (<span class="dt">Succ</span> n) a <span class="ot">-&gt;</span> a
 safeHead (<span class="dt">Cons</span> x xs) <span class="fu">=</span> x</code></pre>
 <p>这里<code>Vec</code>第一个参数的kind变成了<code>Nat</code>，也就是说原来作为类型的<code>Nat</code>被提升成了kind，同样的<code>Succ</code>和<code>Zero</code>都被提升到了类型构造子，kind分别是<code>Nat -&gt; Nat</code>，<code>Nat</code>。</p>
-<p>把列表提升到kind，然后就能实现个简单的HList<sup><a href="#fn5" class="footnoteRef" id="fnref5">5</a></sup><sup><a href="#fn6" class="footnoteRef" id="fnref6">6</a></sup>：</p>
+<p>把列表提升到kind，然后就能实现个简单的异质列表<sup><a href="#fn5" class="footnoteRef" id="fnref5">5</a></sup>：</p>
 <pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">List</span> a <span class="fu">=</span> <span class="dt">Nil</span> <span class="fu">|</span> <span class="dt">Cons</span> a (<span class="dt">List</span> a)
 
 <span class="kw">data</span> <span class="dt">HList</span><span class="ot"> ::</span> <span class="dt">List</span> <span class="fu">*</span> <span class="ot">-&gt;</span> <span class="fu">*</span> <span class="kw">where</span>
@@ -147,8 +147,7 @@ safeHead (<span class="dt">Cons</span> x xs) <span class="fu">=</span> x</code><
 <li id="fn2"><p>至少GHC 7.7.20130824不行<a href="#fnref2">↩</a></p></li>
 <li id="fn3"><p>过程是kind check，expand synonyms，type check<a href="#fnref3">↩</a></p></li>
 <li id="fn4"><p>有个<a href="http://www.haskell.org/haskellwiki/Context_alias">context alias提议</a>能实现类似的功能，和ConstraintKinds很相似<a href="#fnref4">↩</a></p></li>
-<li id="fn5"><p>实际的<a href="citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.101.9906">HList</a>做的要比这个简单定义多很多<a href="#fnref5">↩</a></p></li>
-<li id="fn6"><p>GHC其实对列表有语法支持<a href="#fnref6">↩</a></p></li>
+<li id="fn5"><p>GHC其实对列表有语法支持<a href="#fnref5">↩</a></p></li>
 </ol>
 </div>
   </section>
