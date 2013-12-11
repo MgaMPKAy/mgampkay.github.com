@@ -37,7 +37,7 @@
               <span class="fu">|</span> <span class="dt">Skip</span>    <span class="fu">!</span>s
               <span class="fu">|</span> <span class="dt">Done</span></code></pre>
 <p>我解释一下这两个类型的作用，首先Stream维护了一个状态s和一个steppr函数，<code>stepper :: s -&gt; Step a s</code>能根据一个状态产生一个Step，通过不断调用这个stepper函数就能产生一系列的类型s和输出a。</p>
-<p>注意，Stream类型里用了一个Existential quantification，forall s，表示使用Stream a类型的<strong>用户</strong>是不知道这个s的具体是什么类型，他只知道存在着一个s而已。一个类型不明的数据是完全没用的，所以Stream a还提供了stepper函数，这个函数刚好能接受s类型的参数。这么说当用户有一个Stream a类型的数据时，他能做的就是用这个s调用这个stepper函数，这可能产生一个新的s1，s1和s的类型是相同的，用户可以继续新状态调用stepper，一直迭代到Done。</p>
+<p>注意，Stream类型里用了一个Existential quantification，forall s，表示使用Stream a类型的<strong>用户</strong>是不知道这个s的具体是什么类型，他只知道存在着一个s而已。一个类型不明的数据是完全没用的，所以Stream a还提供了stepper函数，这个函数刚好能接受s类型的参数。这么说当用户有一个Stream a类型的数据时，他能做的就是用这个s调用这个stepper函数，这可能产生一个新的s1（包装在Step里），s1和s的类型是相同的，用户可以继续新状态调用stepper，一直迭代到Done。</p>
 <p>一句话总结：状态对用户是透明的，用户不知道具体状态是什么，只能不断产生更多的状态和输出值。</p>
 <p>如果不用Existential quantification，能实现同样的效果吗？</p>
 <pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">MyStream</span> a s <span class="fu">=</span> <span class="dt">Stream</span> <span class="fu">!</span>(s <span class="ot">-&gt;</span> <span class="dt">Step</span> a s) <span class="fu">!</span>s</code></pre>
