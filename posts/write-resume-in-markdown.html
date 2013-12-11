@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>MgaMPKAy's 用Markdown写简历</title>
+    <link rel="stylesheet" type="text/css" href="../css/default.css" />
+  </head>
+  <body>
+    <header id="header">
+      <div id="logo">
+        <a href="../">MgaMPKAy's Blog</a>
+      </div>
+      <nav id="navigation">
+        <a href="../">Home</a>
+        <a href="../about.html">About</a>
+        <a href="../archive.html">Archive</a>
+      </nav>
+    </header>
+
+    <div id="content">
+      <h1>用Markdown写简历</h1>
+
+      <article>
+  <div class="info">December  8, 2013</div>
+
+  <section id="article-content">
+    <p>面试过两次，都是用Markdown写的纯文字的简历，没有转Html、PDF。感谢同学的推荐，今天又向深信服投了一份简历，用的还是那份简历，不过转成了PDF。</p>
+<p>首先要安装<a href="http://www.tug.org/texlive/">texlive</a>，不太想折腾，所以直接完全安装了，有3.6G，几乎就是我之前使用了的硬盘空间。</p>
+<p>在等待texlive安装的时候，看了一下latex的语法，稍微改了一下pandoc默认的模版，然后我就把简历发出去了。</p>
+<p>用的是[Pandoc-with-Chinese]里(https://github.com/jgm/pandoc/wiki/Pandoc-with-Chinese)里的命令：</p>
+<pre class="sourceCode bash"><code class="sourceCode bash"><span class="kw">pandoc</span> resume.md --template latex.template -o resume.pdf \
+    <span class="kw">--latex-engine</span>=xelatex \
+    <span class="kw">-V</span> mainfont=<span class="st">'WenQuanYi Micro Hei Mono'</span></code></pre>
+<p>觉得原来的模版太线性了，又花了点时间，重新写了一份latex模版，留到下次发简历用。</p>
+  </section>
+
+  <section id="comment">
+    <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+  </section>
+
+</article>
+
+<script type="text/javascript" src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
+<script type="text/javascript" src="../js/post.js"></script>
+
+
+    </div>
+    <footer id="footer">
+      @mgampkay
+    </footer>
+
+    <script type="text/javascript" src="../js/ga.js"></script>
+
+  </body>
+</html>
