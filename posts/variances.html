@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>MgaMPKAy's 协变和逆变</title>
+    <link rel="stylesheet" type="text/css" href="../css/default.css" />
+  </head>
+  <body>
+    <header id="header">
+      <div id="logo">
+        <a href="../">MgaMPKAy's Blog</a>
+      </div>
+      <nav id="navigation">
+        <a href="../">Home</a>
+        <a href="../about.html">About</a>
+        <a href="../archive.html">Archive</a>
+      </nav>
+    </header>
+
+    <div id="content">
+      <h1>协变和逆变</h1>
+
+      <article>
+  <div class="info">December 12, 2013</div>
+
+  <section id="article-content">
+    <p>题外：事实证明，每次我心血来潮都没好结果。</p>
+<p>假设A是B的子类，那么List[A]是List[B]的子类吗？A -&gt; C是B -&gt; C子类吗？协变和逆变讨论的就是高阶类型和子类型组合时的子类关系。</p>
+<p>A是B的子类，意味着需要父类B的地方，可以替换成子类A，这在面向对象编程里是很自然的，最明显的表现就是可以把A的实例赋值给一个B变量。</p>
+<p>下面用<code>A &lt;: B</code>表示A是B的子类。假设 A &lt;: B，给定一个类型构造子T，则T是：</p>
+<ul>
+<li>协变（covariance）：T[A] &lt;: T[B]</li>
+<li>逆变（contravariance）：T[B] &lt;: T[A] （这里A和B的顺序反了，所以是“逆”）</li>
+<li>不变（invariance）：T[A]和T[B]没有子类关系</li>
+</ul>
+<h1 id="函数">函数</h1>
+<p>问题1：假设 A &lt;: B，(A -&gt; C) 和 (B -&gt; C) 的子类关系是？</p>
+<p>问题2：假设 A &lt;: B，(C -&gt; A) 和 (C -&gt; B) 的子类关系是？</p>
+<p>只要假设一个应用场景，根据LSP原则进行推导，就能知道函数类型：</p>
+<ol style="list-style-type: decimal">
+<li>对结果是协变的，或者说结果在函数类型的协变位置或正位置。</li>
+<li>对参数是逆变的，或者说参数在函数类型的逆变位置或负位置。</li>
+</ol>
+<p>问题9：什么情况下，((A -&gt; C) -&gt; C) &lt;: ((B -&gt; C) -&gt; C)？</p>
+<p>我们也可以假设一个使用场景，然后进行推导，但是这有点复杂了。有一个简单的规则可以推导出每个位置是逆变还是协变位置：</p>
+<blockquote>
+<p>一个位置在整个项中的正负是它所在的每个子项的正负的乘积</p>
+</blockquote>
+<p>好绕，不过看一下例子就能明白，以(A -&gt; B) -&gt; C为例，求A的所在位置的正负：</p>
+<ol style="list-style-type: decimal">
+<li>在(A -&gt; B)中，A在负位置</li>
+<li>在(A -&gt; B) -&gt; C中，(A -&gt; B) 在负位置</li>
+<li>所以A在(A -&gt; B) -&gt; C中的位置是：负 * 负 = 正</li>
+</ol>
+<p>回到问题9，((A -&gt; C) -&gt; C) &lt;: ((B -&gt; C) -&gt; C)，A、B又在协变位置（正位置），所以 A &lt;: B。</p>
+<p>问题4：什么情况下，((A1 -&gt; B1) -&gt; C1) -&gt; (D1 -&gt; E1)) &lt;: ((A2 -&gt; B2) -&gt; C2) -&gt; (D2 -&gt; E2))</p>
+<p>答案和出处都见<a href="#参考">参考</a>2。</p>
+<p>为什么这个规则有效呢？我尝试从实际参数的持有者来理解，没有结果，然后看了点范畴论。</p>
+<h1 id="范畴论">范畴论</h1>
+<p>协变和逆变来自范畴论里的协变和逆变函子（Functor）。在我们讨论的这个范畴里，对象是类型，态射是子类关系。</p>
+<p>例1. 下面这个范畴里有类型A和B，箭头由子类指向父类：</p>
+<svg width="62pt" height="90pt" viewBox="0.00 0.00 62.00 116.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"> <g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 112)">
+<title>
+g1
+</title>
+<polygon fill="white" stroke="white" points="-4,4 -4,-112 58,-112 58,4 -4,4"></polygon> <!-- a1 --> <g id="node1" class="node">
+<title>
+a1
+</title>
+<text text-anchor="middle" x="27" y="-86.3" font-family="Times,serif" font-size="14.00">A</text> </g> <!-- a2 --> <g id="node2" class="node">
+<title>
+a2
+</title>
+<text text-anchor="middle" x="27" y="-14.3" font-family="Times,serif" font-size="14.00">B</text> </g> <!-- a1&#45;&gt;a2 --> <g id="edge1" class="edge">
+<title>
+a1-&gt;a2
+</title>
+<path fill="none" stroke="blue" d="M27,-61.6651C27,-53.0537 27,-43.7913 27,-36.1043"></path> <polygon fill="blue" stroke="blue" points="23.5001,-61.6966 27,-71.6966 30.5001,-61.6967 23.5001,-61.6966"></polygon> </g> </g>
+<p></p>
+<p></svg></p>
+<p>类型构造子是Functor，把一个范畴映射到另一个范畴。Covariant functor会保留原范畴间的箭头方向，contravariant functor会把箭头反转。</p>
+<p>例2. T是covariant functor，G是contravariant functor，T[A]和G[A]是新范畴里的对象，新范畴里对像也是类型，态射也是子类关系，所以T和G还是自函子。</p>
+<svg width="180pt" height="86pt" viewBox="0.00 0.00 180.00 85.99" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"> <g id="graph0" class="graph" transform="scale(0.728745 0.728745) rotate(0) translate(4 114)">
+<title>
+g1
+</title>
+<polygon fill="white" stroke="white" points="-4,4 -4,-114 243,-114 243,4 -4,4"></polygon> <!-- ga1 --> <g id="node1" class="node">
+<title>
+ga1
+</title>
+<text text-anchor="middle" x="29" y="-88.3" font-family="Times,serif" font-size="14.00">G[A1]</text> </g> <!-- ga2 --> <g id="node2" class="node">
+<title>
+ga2
+</title>
+<text text-anchor="middle" x="29" y="-14.3" font-family="Times,serif" font-size="14.00">G[A2]</text> </g> <!-- ga1&#45;&gt;ga2 --> <g id="edge1" class="edge">
+<title>
+ga1-&gt;ga2
+</title>
+<path fill="none" stroke="red" d="M29,-73.937C29,-65.8072 29,-55.8761 29,-46.7047"></path> <polygon fill="red" stroke="red" points="32.5001,-46.4406 29,-36.4407 25.5001,-46.4407 32.5001,-46.4406"></polygon> </g> <!-- a1 --> <g id="node3" class="node">
+<title>
+a1
+</title>
+<text text-anchor="middle" x="121" y="-88.3" font-family="Times,serif" font-size="14.00">A1</text> </g> <!-- ga1&#45;&gt;a1 --> <g id="edge4" class="edge">
+<title>
+ga1-&gt;a1
+</title>
+<path fill="none" stroke="black" d="M67.7266,-92C76.5612,-92 85.763,-92 93.9837,-92"></path> <polygon fill="black" stroke="black" points="67.6051,-88.5001 57.6051,-92 67.605,-95.5001 67.6051,-88.5001"></polygon> <text text-anchor="middle" x="75.5" y="-98.8" font-family="Times,serif" font-size="14.00">G</text> </g> <!-- a2 --> <g id="node4" class="node">
+<title>
+a2
+</title>
+<text text-anchor="middle" x="121" y="-14.3" font-family="Times,serif" font-size="14.00">A2</text> </g> <!-- ga2&#45;&gt;a2 --> <g id="edge5" class="edge">
+<title>
+ga2-&gt;a2
+</title>
+<path fill="none" stroke="black" d="M67.7266,-18C76.5612,-18 85.763,-18 93.9837,-18"></path> <polygon fill="black" stroke="black" points="67.6051,-14.5001 57.6051,-18 67.605,-21.5001 67.6051,-14.5001"></polygon> <text text-anchor="middle" x="75.5" y="-24.8" font-family="Times,serif" font-size="14.00">G</text> </g> <!-- a1&#45;&gt;a2 --> <g id="edge2" class="edge">
+<title>
+a1-&gt;a2
+</title>
+<path fill="none" stroke="blue" d="M121,-63.7193C121,-54.572 121,-44.6255 121,-36.4407"></path> <polygon fill="blue" stroke="blue" points="117.5,-63.937 121,-73.937 124.5,-63.937 117.5,-63.937"></polygon> </g> <!-- ta1 --> <g id="node5" class="node">
+<title>
+ta1
+</title>
+<text text-anchor="middle" x="212" y="-88.3" font-family="Times,serif" font-size="14.00">T[A1]</text> </g> <!-- a1&#45;&gt;ta1 --> <g id="edge6" class="edge">
+<title>
+a1-&gt;ta1
+</title>
+<path fill="none" stroke="black" d="M148.303,-92C156.506,-92 165.654,-92 174.4,-92"></path> <polygon fill="black" stroke="black" points="174.402,-95.5001 184.402,-92 174.402,-88.5001 174.402,-95.5001"></polygon> <text text-anchor="middle" x="166" y="-98.8" font-family="Times,serif" font-size="14.00">T</text> </g> <!-- ta2 --> <g id="node6" class="node">
+<title>
+ta2
+</title>
+<text text-anchor="middle" x="212" y="-14.3" font-family="Times,serif" font-size="14.00">T[A2]</text> </g> <!-- a2&#45;&gt;ta2 --> <g id="edge7" class="edge">
+<title>
+a2-&gt;ta2
+</title>
+<path fill="none" stroke="black" d="M148.303,-18C156.506,-18 165.654,-18 174.4,-18"></path> <polygon fill="black" stroke="black" points="174.402,-21.5001 184.402,-18 174.402,-14.5001 174.402,-21.5001"></polygon> <text text-anchor="middle" x="166" y="-24.8" font-family="Times,serif" font-size="14.00">T</text> </g> <!-- ta1&#45;&gt;ta2 --> <g id="edge3" class="edge">
+<title>
+ta1-&gt;ta2
+</title>
+<path fill="none" stroke="blue" d="M212,-63.7193C212,-54.572 212,-44.6255 212,-36.4407"></path> <polygon fill="blue" stroke="blue" points="208.5,-63.937 212,-73.937 215.5,-63.937 208.5,-63.937"></polygon> </g> </g>
+<p></p>
+<p></svg></p>
+<p>现在考虑函数类型的构造子<code>-&gt;</code>，它有两个参数，范畴的积不太好理解，但是我们可以部分调用得到一个functor。<code>-&gt; A</code>表示结果为A的函数，是逆变的，`A -&gt;｀表示参数为A的函数，是协变的。</p>
+<p>现在看((A -&gt; B) -&gt; C)-&gt;D中的B：</p>
+<svg width="600px" height="157px" viewBox="0.00 0.00 533.00 118.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"> <g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 114)">
+<title>
+g1
+</title>
+<polygon fill="white" stroke="white" points="-4,4 -4,-114 529,-114 529,4 -4,4"></polygon> <!-- b1 --> <g id="node1" class="node">
+<title>
+b1
+</title>
+<text text-anchor="middle" x="27" y="-88.9" font-family="Times,serif" font-size="12.00">B1</text> </g> <!-- b2 --> <g id="node2" class="node">
+<title>
+b2
+</title>
+<text text-anchor="middle" x="27" y="-14.9" font-family="Times,serif" font-size="12.00">B2</text> </g> <!-- b1&#45;&gt;b2 --> <g id="edge1" class="edge">
+<title>
+b1-&gt;b2
+</title>
+<path fill="none" stroke="blue" d="M27,-63.7193C27,-54.572 27,-44.6255 27,-36.4407"></path> <polygon fill="blue" stroke="blue" points="23.5001,-63.937 27,-73.937 30.5001,-63.937 23.5001,-63.937"></polygon> </g> <!-- aa1 --> <g id="node3" class="node">
+<title>
+aa1
+</title>
+<text text-anchor="middle" x="134" y="-88.9" font-family="Times,serif" font-size="12.00">(A-&gt;)[B1]</text> </g> <!-- b1&#45;&gt;aa1 --> <g id="edge5" class="edge">
+<title>
+b1-&gt;aa1
+</title>
+<path fill="none" stroke="black" d="M54.0006,-92C63.9546,-92 75.5458,-92 86.7645,-92"></path> <polygon fill="black" stroke="black" points="86.905,-95.5001 96.905,-92 86.905,-88.5001 86.905,-95.5001"></polygon> <text text-anchor="middle" x="75.5" y="-97.8" font-family="Times,serif" font-size="9.00">(A-&gt;)</text> </g> <!-- aa2 --> <g id="node4" class="node">
+<title>
+aa2
+</title>
+<text text-anchor="middle" x="134" y="-14.9" font-family="Times,serif" font-size="12.00">(A-&gt;)[B2]</text> </g> <!-- b2&#45;&gt;aa2 --> <g id="edge6" class="edge">
+<title>
+b2-&gt;aa2
+</title>
+<path fill="none" stroke="black" d="M54.0006,-18C63.9546,-18 75.5458,-18 86.7645,-18"></path> <polygon fill="black" stroke="black" points="86.905,-21.5001 96.905,-18 86.905,-14.5001 86.905,-21.5001"></polygon> <text text-anchor="middle" x="75.5" y="-23.8" font-family="Times,serif" font-size="9.00">(A-&gt;)</text> </g> <!-- aa1&#45;&gt;aa2 --> <g id="edge2" class="edge">
+<title>
+aa1-&gt;aa2
+</title>
+<path fill="none" stroke="blue" d="M134,-63.7193C134,-54.572 134,-44.6255 134,-36.4407"></path> <polygon fill="blue" stroke="blue" points="130.5,-63.937 134,-73.937 137.5,-63.937 130.5,-63.937"></polygon> </g> <!-- ca1 --> <g id="node5" class="node">
+<title>
+ca1
+</title>
+<text text-anchor="middle" x="271" y="-88.9" font-family="Times,serif" font-size="12.00">(-&gt;C)[(A-&gt;)[B1]]</text> </g> <!-- aa1&#45;&gt;ca1 --> <g id="edge7" class="edge">
+<title>
+aa1-&gt;ca1
+</title>
+<path fill="none" stroke="black" d="M171.074,-92C181.146,-92 192.374,-92 203.565,-92"></path> <polygon fill="black" stroke="black" points="203.797,-95.5001 213.797,-92 203.797,-88.5001 203.797,-95.5001"></polygon> <text text-anchor="middle" x="192.5" y="-97.8" font-family="Times,serif" font-size="9.00">(-&gt;C)</text> </g> <!-- ca2 --> <g id="node6" class="node">
+<title>
+ca2
+</title>
+<text text-anchor="middle" x="271" y="-14.9" font-family="Times,serif" font-size="12.00">(-&gt;C)[(A-&gt;)[B2]]</text> </g> <!-- aa2&#45;&gt;ca2 --> <g id="edge8" class="edge">
+<title>
+aa2-&gt;ca2
+</title>
+<path fill="none" stroke="black" d="M171.074,-18C181.146,-18 192.374,-18 203.565,-18"></path> <polygon fill="black" stroke="black" points="203.797,-21.5001 213.797,-18 203.797,-14.5001 203.797,-21.5001"></polygon> <text text-anchor="middle" x="192.5" y="-23.8" font-family="Times,serif" font-size="9.00">(-&gt;C)</text> </g> <!-- ca1&#45;&gt;ca2 --> <g id="edge3" class="edge">
+<title>
+ca1-&gt;ca2
+</title>
+<path fill="none" stroke="red" d="M271,-73.937C271,-65.8072 271,-55.8761 271,-46.7047"></path> <polygon fill="red" stroke="red" points="274.5,-46.4406 271,-36.4407 267.5,-46.4407 274.5,-46.4406"></polygon> </g> <!-- da1 --> <g id="node7" class="node">
+<title>
+da1
+</title>
+<text text-anchor="middle" x="448" y="-88.9" font-family="Times,serif" font-size="12.00">(-&gt;D)[(-&gt;C)[(A-&gt;)[B1]]]</text> </g> <!-- ca1&#45;&gt;da1 --> <g id="edge9" class="edge">
+<title>
+ca1-&gt;da1
+</title>
+<path fill="none" stroke="black" d="M328.467,-92C338.641,-92 349.441,-92 360.227,-92"></path> <polygon fill="black" stroke="black" points="360.543,-95.5001 370.543,-92 360.543,-88.5001 360.543,-95.5001"></polygon> <text text-anchor="middle" x="349.25" y="-97.8" font-family="Times,serif" font-size="9.00">(-&gt;D)</text> </g> <!-- da2 --> <g id="node8" class="node">
+<title>
+da2
+</title>
+<text text-anchor="middle" x="448" y="-14.9" font-family="Times,serif" font-size="12.00">(-&gt;D)[(-&gt;C)[(A-&gt;)[B2]]]</text> </g> <!-- ca2&#45;&gt;da2 --> <g id="edge10" class="edge">
+<title>
+ca2-&gt;da2
+</title>
+<path fill="none" stroke="black" d="M328.467,-18C338.641,-18 349.441,-18 360.227,-18"></path> <polygon fill="black" stroke="black" points="360.543,-21.5001 370.543,-18 360.543,-14.5001 360.543,-21.5001"></polygon> <text text-anchor="middle" x="349.25" y="-23.8" font-family="Times,serif" font-size="9.00">(-&gt;D)</text> </g> <!-- da1&#45;&gt;da2 --> <g id="edge4" class="edge">
+<title>
+da1-&gt;da2
+</title>
+<path fill="none" stroke="blue" d="M448,-63.7193C448,-54.572 448,-44.6255 448,-36.4407"></path> <polygon fill="blue" stroke="blue" points="444.5,-63.937 448,-73.937 451.5,-63.937 444.5,-63.937"></polygon> </g> </g>
+<p></p>
+<p></svg></p>
+<p>也就是说，经过一系列的逆变和协变，B在((A -&gt; B) -&gt; C)-&gt;D的逆变位置，和正负乘积的关系就很明显了。</p>
+<h1 id="什么用">什么用？</h1>
+<p>还是那句话，用类型更准确地描述需求。</p>
+<h1 id="参考">参考</h1>
+<ol style="list-style-type: decimal">
+<li><a href="http://en.wikipedia.org/wiki/Covariance_and_contravariance_(computer_science)">Covariance and contravariance (computer science)</a></li>
+<li><a href="http://stackoverflow.com/questions/9243215/lifting-a-higher-order-function-in-haskell">Lifting a higher order function in Haskell</a></li>
+</ol>
+  </section>
+
+  <section id="comment">
+    <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+  </section>
+
+</article>
+
+<script type="text/javascript" src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
+<script type="text/javascript" src="../js/post.js"></script>
+
+
+    </div>
+    <footer id="footer">
+      @mgampkay
+    </footer>
+
+    <script type="text/javascript" src="../js/ga.js"></script>
+
+  </body>
+</html>
