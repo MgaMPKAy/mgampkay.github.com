@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>MgaMPKAy's GHC IO管理器的进化历程</title>
+    <link rel="stylesheet" type="text/css" href="../css/default.css" />
+  </head>
+  <body>
+    <header id="header">
+      <div id="logo">
+        <a href="../">MgaMPKAy's Blog</a>
+      </div>
+      <nav id="navigation">
+        <a href="../">Home</a>
+        <a href="../about.html">About</a>
+        <a href="../archive.html">Archive</a>
+      </nav>
+    </header>
+
+    <div id="content">
+      <h1>GHC IO管理器的进化历程</h1>
+
+      <article>
+  <div class="info">December 14, 2013</div>
+
+  <section id="article-content">
+    <p>为了更好地理解IO Manager做的事，我觉得有必要了解运行时中相关的部分，于是按时间循序看了些论文。因为GHC的IO Manager才是主题的，每一节都是对应论文的笔记，不是特别相关的内容（调度、STM、spark）都被简单略过了<sup><a href="#fn1" class="footnoteRef" id="fnref1">1</a></sup>。</p>
+<h1 id="最初的n1模型">最初的N:1模型</h1>
+<p>Paper<sup><a href="#fn2" class="footnoteRef" id="fnref2">2</a></sup>: <a href="http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.53.6877">Concurrent Haskell</a></p>
+<pre><code>   [HaskellThread]
+---------------------
+      OSThread</code></pre>
+<h2 id="轻量级线程">轻量级线程</h2>
+<ul>
+<li>一个Haskell程序使用一个OS线程（native thread），在这之上实现用户态的轻量级线程</li>
+<li>每个线程都有一个堆上分配的栈</li>
+<li>调度器只在特定的时刻换线程：堆上的对象不是正在修改，知道寄存器的liveness信息 <!-- + 调度器可选择抢占式（通过时间片切换）和协作式（线程阻塞时切换） --></li>
+</ul>
+<h2 id="局限">局限</h2>
+<p>一个线程执行阻塞IO时会阻塞全部线程。</p>
+<!--
+## 不是特别相关
+### MVar
+
+MVar做为基本的同步原语，MVar的语义没有要求FIFO的循序阻塞线程，实现上的确是了一个队列来记录堵塞的进程。
+
+### Thunk：
+
++ Thunk是堆上的对象，包含一个代码指针和自由变量
++ 求值：
+    1. 把代码指针加载到寄存器
+    2. jump跳转
+    3. 把代码指针被指向一个特别的“under evaluation”代码，其他对这个thunk求值的线程就会跳到“under evaluation”，然后进入队列并堵塞
+    4. 求值完成后，把thunk改成结果，唤醒被阻塞的线程
+
+### 线程的GC：
+
+基本原则：一个线程只有在不能再产生副作用时才能被GC
+
+因为：
+
+1.  可运行的线程不能被GC
+2. 一个线程T阻塞在MVar上，且这个MVar没有被其他没阻塞的线程引用时，线程T会被GC（因为死锁了）
+
+所以GC时:
+
+1. 所以可运行的进程在root set
+2. 一个MVar可达时，阻塞在这个MVar上的进程都可达
+-->
+
+<h1 id="ffi和混合模型">FFI和混合模型</h1>
+<p>Paper: <a href="http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.80.4811">Extending the Haskell FFI with Concurrency</a></p>
+<h2 id="ffi和并发">FFI和并发</h2>
+<p>通过FFI，可以Haskell里调用其他语言的函数（foreign out-call），也可以在其他语言调用Haskell函数（foreign in-call）。out-call又分为<code>safe</code>和<code>unsafe</code>：</p>
+<ul>
+<li>safe：可以回调Haskell函数，需要更多的维护实现回调</li>
+<li>unsafe：不可回调Haskell函数，性能更好</li>
+</ul>
+<p>FFI和Concurrent Haskell交互的时候会遇到的一些问题：</p>
+<ol style="list-style-type: decimal">
+<li>out-call可能阻塞</li>
+<li>in-call/out-call可能要求在同一个OS线程上进行（例如使用了thread local state）</li>
+<li>可能有并发的in-call</li>
+<li>in-call可能产生新的Haskell线程</li>
+</ol>
+<p>一些要求和解决方法：</p>
+<ol style="list-style-type: decimal">
+<li>safe out-call只阻塞发起调用的Haskell线程</li>
+<li>区分bound和unbound的Haskell线程，被绑定的Haskell线程必须在同一个OS线程上执行，不能迁移</li>
+<li>in-call时产生一个绑定的Haskell线程</li>
+<li>主线程是绑定的</li>
+</ol>
+<h2 id="ghc的实现">GHC的实现</h2>
+<p>GHC的通过N:M+1:1的混合模型实现了上面的要求。</p>
+<pre><code>  [UnboundHaskellThread]        BoundHaskellThread
+--------------------------   -------------------------
+      [OSThread]                    OSThread</code></pre>
+<ul>
+<li>每个绑定线程在对应的一个OS线程上执行</li>
+<li>非绑定线程可以在若干个OS线程迁移、执行</li>
+<li>每个OS线程都有各自的调度器</li>
+<li>在某一时刻，通过一个叫Capability的锁保证，只有一个OS线程能执行Haskell代码（不管是否绑定），但多个OS线程可以同时执行call-out（非Haskell代码）。</li>
+<li>一个OS线程在执行Haskell代码时，在下面的情况下要释放Capability：
+<ul>
+<li>safe call-out（避免阻塞其他非绑定线程）</li>
+<li>另一个OS上执行的call-out返回了 （FFI优先级更高）</li>
+<li>另一个OS被call-in（FFI优先级更高）</li>
+<li>要执行的是绑定线程且被绑定在另一个OS线程，直接把Capability传给目标OS线程</li>
+<li>当前进程用于执行绑定线程，但遇到了非绑定线程，直接把Capability传给目标OS线程</li>
+<li>在该OS线程上的绑定线程结束</li>
+</ul></li>
+<li>释放或传递Capability后，OS线程会再尝试获得，如果没获得就堵塞</li>
+<li>因为只有一个Capability，同时要保证unsafe的性能，unsafe call-out会阻塞全部Haskell线程</li>
+</ul>
+<h2 id="io-manager">IO Manager</h2>
+<p>在上面的实现中，只要把阻塞的call-out标记为safe，就能避免IO阻塞全部的Haskell线程，但是每个safe call-out都会占用一个OS线程，性能比不上用poll/select + non-blocking IO。GHC的IO Manager通过更简单的方法封装了poll/select 和non-blocking IO，向非绑定线程提供简单的接口（绑定线程会在独立的OS线程执行就没必要用IO Manager了）。</p>
+<p>首先会有一个专门执行poll/select的非绑定线程（IO服务线程），它会监听一组文件描述符，其中一个文件描述符用于通知自己。</p>
+<p>当一个非绑定线程需要等待IO（例如read返回 EAGAIN）时：</p>
+<ol style="list-style-type: decimal">
+<li>把要操作的文件描述符放到一个全局的MVar</li>
+<li>通知IO服务线程 （向通知文件描述写1字节的控制消息）</li>
+<li>线程阻塞在一个MVar上，等待IO服务线程通过这个MVar唤醒自己</li>
+</ol>
+<p>IO服务进程循环进行下面的过程，提过IO服务：</p>
+<ol style="list-style-type: decimal">
+<li>从全局MVar取得文件描述符</li>
+<li>在这些描述符上进行poll/select（safe out-call），阻塞直到返回</li>
+<li>如果通知用的描述符可读，从通知用的描述符读1字节</li>
+<li>通过线程提供的MVar通知它们文件描述符可读或可写</li>
+</ol>
+<p>原本每个safe out-call都需要占用一个OS线程，有n个Haskell线程同时执行safe out-call就需要使用n+1个OS线程，通过IO Manager可以把OS线程减少到两个（一个用来执行poll/select，一个用来执行Haskell代码），代价是增加了OS线程间的通信和全局MVar的瓶颈。</p>
+<h1 id="不再是一个capability">不再是一个Capability！</h1>
+<p>根据一节的描述，同一时刻只有一个OS线程在执行Haskell代码，Haskell程序根本没有充分利用到多核，于是多个Capability不在是锁，也不仅有一个……把Capability想象成一个虚拟机，里面有很多线程，一个Capability需要一个OS线程来运行。总之现在能在多个OS线程上同时执行Haskell代码了，上面一些细节就变了例如：</p>
+<ol style="list-style-type: decimal">
+<li>unsafe call-out只会阻塞一个OS线程和所在的Capability。</li>
+<li>……</li>
+</ol>
+<p>我们还是回到IO Manager直接相关的好了。</p>
+<h1 id="事件驱动io">事件驱动IO</h1>
+<p>Paper: <a href="http://research.google.com/pubs/pub36841.html">Scalable I/O Event Handling for GHC</a></p>
+<p>这个IO Manager被称为new IO Manager，主体是EventManager，管理底层的事件和回调（回调函数通常是个写MVar的闭包，用来唤醒线程）。</p>
+<ol style="list-style-type: decimal">
+<li>把底层的poll/select换成事件驱动的epoll/kqueue</li>
+<li>改善通知方式，例如Linux下用eventfd</li>
+<li>用一个基于Patricia树的Map保存文件描述符到线程的映射，加快查找</li>
+<li>用priority search queue保存timeout</li>
+<li>很多小优化</li>
+</ol>
+<p>虽然原理和用法没太大变化，但是性能的提升和扩展性都是真的。</p>
+<p>New IO Manager的问题，可以说是从最初的IO Manager就遗留下来的问题：只有一个IO Manager，在高并发时会成为瓶颈。</p>
+<h1 id="mio">Mio</h1>
+<p>Paper: <a href="haskell.cs.yale.edu/wp-content/uploads/2013/08/hask035-voellmy.pdf‎">Mio: A High-Performance Multicore IO Manager for GHC</a></p>
+<p><del>我总想起秋山澪</del></p>
+<p>对The new IO Manager的改进：</p>
+<ol style="list-style-type: decimal">
+<li>N个EventManager（N等于Capability个数）</li>
+<li>每个EventManager都有一个并发的查找表，里面有32个带锁的Map，根据文件描述符，把回调函数哈希到一个Map</li>
+<li>每个Capability有一个分发线程（IO服务线程），加快消息分发，减少核心间的交互</li>
+<li>对事件注册优化 <!-- 5. 顺便修复内核bug --></li>
+</ol>
+<p>题外：论文里给出nginx和mighttpd的性能对比，感觉要比<a href="http://www.aosabook.org/en/posa/warp.html">Wrap</a>科学，nginx的性能不是盖的。</p>
+<h1 id="并不特别">并不特别</h1>
+<p>你看Java用1:1模型，然后通过Executor、fork/join把任务细分然后分派到工作线程，还不是活很好的。Python用Gevent也是差不多效果，C直接epoll+coroutine也一样牛逼，连PHP都能借ibev/libevent的东风了，GHC的轻量级线程其实没什么特别的。</p>
+<p>我也一直在想，Haskell有什么独一无二的、有用的特性是其他语言难以模仿的？我现在能感受到的，更多的是函数式的好，而不是牛逼的语言特性和运行时。</p>
+<div class="footnotes">
+<hr />
+<ol>
+<li id="fn1"><p>有些内容在后面的论文没提到，实际上多半已经改变，特别是第一篇论文的内容，为了避免混乱，在我弄好折叠前，那些改变了又没提到的都被注释掉了，可以在HTML里看到。<a href="#fnref1">↩</a></p></li>
+<li id="fn2"><p>paper到底是怎样的概念？<a href="#fnref2">↩</a></p></li>
+</ol>
+</div>
+  </section>
+
+  <section id="comment">
+    <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+  </section>
+
+</article>
+
+<script type="text/javascript" src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
+<script type="text/javascript" src="../js/post.js"></script>
+
+
+    </div>
+    <footer id="footer">
+      @mgampkay
+    </footer>
+
+    <script type="text/javascript" src="../js/ga.js"></script>
+
+  </body>
+</html>
