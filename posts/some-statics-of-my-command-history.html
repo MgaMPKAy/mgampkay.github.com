@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>MgaMPKAy's 统计自己的命令历史</title>
+    <link rel="stylesheet" type="text/css" href="../css/default.css" />
+  </head>
+  <body>
+    <header id="header">
+      <div id="logo">
+        <a href="../">MgaMPKAy's Blog</a>
+      </div>
+      <nav id="navigation">
+        <a href="../">Home</a>
+        <a href="../about.html">About</a>
+        <a href="../archive.html">Archive</a>
+      </nav>
+    </header>
+
+    <div id="content">
+      <h1>统计自己的命令历史</h1>
+
+      <article>
+  <div class="info">December 19, 2013</div>
+
+  <section id="article-content">
+    <p>简单地统计了最近三个多月过我常用的命令<sup><a href="#fn1" class="footnoteRef" id="fnref1">1</a></sup>。</p>
+<h1 id="结果">结果</h1>
+<div id="hour_chart" style="width: 600px; height: 220px;"></div>
+
+<div id="weekdate_chart" style="width: 600px; height: 220px;"></div>
+
+<div id="power_law" style="width: 600px; height: 300px;"></div>
+
+<p>这10%的命令占了80%的使用量:</p>
+<div id="top_chart" style="width: 600px;"></div>
+
+<p><code>ls</code>用的比想像中多，要想办法降下去。</p>
+<h1 id="实现">实现</h1>
+<p><a href>代码</a></p>
+<p>为了找出历史记录里用过的全部命令，一个完整的Shell脚本解析器是必须的，所以我用了<code>language-sh</code><sup><a href="#fn2" class="footnoteRef" id="fnref2">2</a></sup>，试了一些脚本，基本满足要求。经过解析之后就得到一棵抽象语法树（类型是<code>Command</code>，不要），其中的<code>Statement</code>节点上的第一子节点就是我想要的命令名<sup><a href="#fn3" class="footnoteRef" id="fnref3">3</a></sup>：</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">getCommand ::</span> <span class="dt">Statement</span> <span class="ot">-&gt;</span> [<span class="dt">String</span>]
+getCommand (<span class="dt">Statement</span> (x<span class="fu">:</span>_) _ _) <span class="fu">=</span> [pretty x]
+getCommand _ <span class="fu">=</span> []</code></pre>
+<p>但是那些<code>Statement</code>节点在AST里藏得很深，而且里面还有递归的节点，要遍历好像很难。所以我用<code>syb</code>来遍历AST：</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">collectCommand ::</span> <span class="dt">Data</span> a <span class="ot">=&gt;</span> a <span class="ot">-&gt;</span> [<span class="dt">String</span>]
+collectCommand <span class="fu">=</span> everything (<span class="fu">++</span>) ([] <span class="ot">`mkQ`</span> getCommand)</code></pre>
+<p>遍历呢？我只要关注怎样从Statement里得到命令（<code>getCommand</code>），遍历都被<code>everything</code>处理了，泛型编程万岁。</p>
+<p>然后就是读<code>~/.bash_history</code>，解析时间和命令，得到一个列表，就可以进行各种查询了。</p>
+<script type="text/javascript" src="https://www.google.com/jsapi"></script>
+<script type="text/javascript">
+      google.load("visualization", "1", {packages:["corechart", "table"]});
+
+      google.setOnLoadCallback(drawChart);
+
+      function drawChart(){
+	  drawWeekdateChart();
+	  drawHourChart();
+	  drawTable();
+	  drawScatter();
+      }
+
+      function drawWeekdateChart() {
+	  var data = google.visualization.arrayToDataTable([
+	      ['日期', '次数'],
+	      ['星期一', 4253], ['星期二', 4161], ['星期三', 4356], ['星期四', 5033], ['星期五', 2530], ['星期六', 2922], ['星期日', 3818]]);
+
+	  var options = {
+	      title: '使用量(按星期)',
+	      hAxis: {title: '星期'},
+	      vAxis: {title: '次数'},
+	      legend: 'none',
+	  };
+	  var chart = new google.visualization.ColumnChart(document.getElementById('weekdate_chart'));
+	  chart.draw(data, options);
+      }
+
+      function drawHourChart() {
+	  var data = google.visualization.arrayToDataTable([
+	      ['时间', '次数'],
+	      [0,1521],[1,1124],[2,595],[3,373],[4,169],[5,174],[6,45],[7,126],[8,312],[9,570],[10,1946],[11,1570],[12,1155],[13,1286],[14,1412],[15,1617],[16,1409],[17,1500],[18,1158],[19,1318],[20,2093],[21,2028],[22,1924],[23,1648]]);
+
+	  var options = {
+	      title: '使用量(按时间)',
+	      hAxis: {title: '时间'},
+	      vAxis: {title: '次数'},
+	      legend: 'none',
+	  };
+	  var chart = new google.visualization.ColumnChart(document.getElementById('hour_chart'));
+	  chart.draw(data, options);
+      }
+      function drawTable() {
+        var data = new google.visualization.DataTable();
+        data.addColumn('string', '命令');
+        data.addColumn('number', '次数');
+        data.addRows([
+	      ["ls",3253],["cd",1785],["\\rm",1152],["zathura",1150],["cat",992],["sudo",770],["lsl",703],["cp",614],["grep",573],["..",529],["opera",516],["du",487],["journalctl",441],["a-router",439],["a-package",431],["htop",397],["echo",390],["awk",344],["ex",330],["./a.out",308],["mplayer",297],["gcc",277],["alsamixer",250],["a-new-word",245],["source",244],["mv",232],["mkdir",229],["tar",225],["git",208],["poweroff",197],["hugs",193],["curl",180],["php",162],["sync",159],["ssh",158],["a-mount-oldu",156],["cabal",146],["wc",145],["wget",144],["history",132],["less",130],["file",125],["darcs",123],["runhugs",122],["exit",121],["a-setup",121],["touch",120],["man",119],["rev",118],["head",116],["cut",113],["cdw",113],["a-kill-emacs",110],["find",109],["a-play-xiami",108],["ghci",105]
+        ]);
+
+        var table = new google.visualization.Table(document.getElementById('top_chart'));
+        table.draw(data, {showRowNumber: true, page: 'enable'});
+      }
+
+      function drawScatter() {
+        var data = google.visualization.arrayToDataTable([
+              ['使用量', '命令数'],
+              [0.0,368],[1.0,306],[1.58,267],[2.0,244],[2.32,232],[2.58,218],[2.80,207],[3.0,199],[3.16,190],[3.32,179],[3.45,172],[3.58,164],[3.70,158],[3.80,153],[3.90,152],[4.0,145],[4.08,142],[4.16,138],[4.24,135],[4.32,134],[4.39,130],[4.45,127],[4.52,124],[4.58,121],[4.64,118],[4.70,116],[4.75,114],[4.80,109],[4.85,106],[4.90,105],[4.95,104],[5.0,104],[5.04,103],[5.08,100],[5.12,97],[5.16,96],[5.20,96],[5.24,95],[5.28,95],[5.32,95],[5.35,95],[5.39,94],[5.42,94],[5.45,93],[5.49,93],[5.52,93],[5.55,92],[5.58,92],[5.61,91],[5.64,91],[5.67,91],[5.70,91],[5.72,90],[5.75,89],[5.78,89],[5.80,88],[5.83,88],[5.85,87],[5.88,87],[5.90,86],[5.93,86],[5.95,86],[5.97,86],[6.0,84],[6.02,84],[6.04,82],[6.06,81],[6.08,80],[6.10,79],[6.12,79],[6.14,78],[6.16,77],[6.18,76],[6.20,76],[6.22,76],[6.24,76],[6.26,76],[6.28,75],[6.30,73],[6.32,72],[6.33,71],[6.35,71],[6.37,70],[6.39,70],[6.40,70],[6.42,70],[6.44,67],[6.45,67],[6.47,67],[6.49,67],[6.50,67],[6.52,67],[6.53,65],[6.55,65],[6.56,64],[6.58,63],[6.59,61],[6.61,61],[6.62,59],[6.64,59],[6.65,58],[6.67,58],[6.68,58],[6.70,58],[6.71,58],[6.72,57],[6.74,57],[6.75,56],[6.76,55],[6.78,54],[6.79,54],[6.80,54],[6.82,52],[6.83,52],[6.84,52],[6.85,52],[6.87,52],[6.88,50],[6.89,48],[6.90,47],[6.91,45],[6.93,44],[6.94,43],[6.95,43],[6.96,42],[6.97,42],[6.98,42],[7.0,42],[7.01,42],[7.02,41],[7.03,41],[7.04,40],[7.05,40],[7.06,40],[7.07,40],[7.08,39],[7.09,39],[7.10,39],[7.11,39],[7.12,39],[7.13,39],[7.14,39],[7.15,39],[7.16,38],[7.17,37],[7.18,36],[7.19,36],[7.20,36],[7.21,36],[7.22,36],[7.23,36],[7.24,36],[7.25,36],[7.26,36],[7.27,36],[7.28,35],[7.29,35],[7.30,34],[7.31,33],[7.32,33],[7.33,33],[7.34,32],[7.35,32],[7.36,32],[7.37,32],[7.38,32],[7.39,32],[7.40,32],[7.41,32],[7.42,32],[7.43,32],[7.44,32],[7.45,32],[7.46,32],[7.47,32],[7.48,32],[7.49,31],[7.50,31],[7.51,31],[7.52,31],[7.53,31],[7.54,31],[7.55,31],[7.56,31],[7.57,31],[7.58,31],[7.59,30],[7.60,30],[7.61,30],[7.62,29],[7.63,29],[7.64,29],[7.65,29],[7.66,29],[7.67,29],[7.68,29],[7.69,29],[7.70,28],[7.71,28],[7.72,28],[7.73,28],[7.74,28],[7.75,28],[7.76,28],[7.77,28],[7.78,28],[7.79,28],[7.80,28],[7.81,27],[7.82,27],[7.83,27],[7.84,26],[7.85,26],[7.86,25],[7.87,25],[7.88,25],[7.89,25],[7.90,25],[7.91,25],[7.92,25],[7.93,24],[7.94,23],[7.95,23],[7.96,23],[7.97,22],[7.98,22],[7.99,22],[8.0,22],[8.00,22],[8.01,22],[8.02,22],[8.03,22],[8.04,22],[8.05,22],[8.06,22],[8.07,22],[8.08,22],[8.09,22],[8.10,22],[8.11,21],[8.12,21],[8.13,21],[8.14,21],[8.15,21],[8.16,21],[8.17,21],[8.18,21],[8.19,21],[8.20,21],[8.21,20],[8.22,20],[8.23,20],[8.24,20],[8.25,20],[8.26,19],[8.27,18],[8.28,18],[8.29,18],[8.30,18],[8.31,18],[8.32,18],[8.33,18],[8.34,18],[8.35,18],[8.36,18],[8.37,17],[8.38,17],[8.39,17],[8.40,17],[8.41,17],[8.42,17],[8.43,16],[8.44,16],[8.45,16],[8.46,16],[8.47,16],[8.48,16],[8.49,16],[8.50,16],[8.51,16],[8.52,16],[8.53,16],[8.54,16],[8.55,16],[8.56,16],[8.57,16],[8.58,16],[8.59,16],[8.60,16],[8.61,15],[8.62,15],[8.63,14],[8.64,14],[8.65,14],[8.66,14],[8.67,14],[8.68,14],[8.69,14],[8.70,14],[8.71,14],[8.72,14],[8.73,14],[8.74,14],[8.75,13],[8.76,13],[8.77,13],[8.78,13],[8.79,12],[8.80,12],[8.81,12],[8.82,12],[8.83,12],[8.84,12],[8.85,12],[8.86,12],[8.87,12],[8.88,12],[8.89,12],[8.90,12],[8.91,12],[8.92,12],[8.93,11],[8.94,11],[8.95,11],[8.96,11],[8.97,11],[8.98,11],[8.99,11],[9.0,11],[9.00,11],[9.01,10],[9.02,10],[9.03,10],[9.04,10],[9.05,9],[9.06,9],[9.07,9],[9.08,9],[9.09,9],[9.10,9],[9.11,9],[9.12,9],[9.13,9],[9.14,9],[9.15,9],[9.16,8],[9.17,8],[9.18,8],[9.19,8],[9.20,8],[9.21,8],[9.22,8],[9.23,8],[9.24,8],[9.25,8],[9.26,7],[9.27,7],[9.28,7],[9.29,7],[9.30,7],[9.31,7],[9.32,7],[9.33,7],[9.34,7],[9.35,7],[9.36,7],[9.37,7],[9.38,7],[9.39,7],[9.40,7],[9.41,7],[9.42,7],[9.43,7],[9.44,7],[9.45,7],[9.46,6],[9.47,6],[9.48,6],[9.49,6],[9.50,6],[9.51,6],[9.52,6],[9.53,6],[9.54,6],[9.55,6],[9.56,6],[9.57,6],[9.58,6],[9.59,5],[9.60,5],[9.61,5],[9.62,5],[9.63,5],[9.64,5],[9.65,5],[9.66,5],[9.67,5],[9.68,5],[9.69,5],[9.70,5],[9.71,5],[9.72,5],[9.73,5],[9.74,5],[9.75,5],[9.76,5],[9.77,5],[9.78,5],[9.79,5],[9.80,5],[9.81,5],[9.82,5],[9.83,5],[9.84,5],[9.85,5],[9.86,5],[9.87,5],[9.88,5],[9.89,5],[9.90,5],[9.91,5],[9.92,5],[9.93,5],[9.94,5],[9.95,5],[9.96,4],[9.97,4],[9.98,4],[9.99,4],[10.0,4],[10.1,4],[10.2,2],[10.3,2],[10.4,2],[10.5,2],[10.6,2],[10.7,2],[10.8,2],[10.9,1],[11.0,1],[11.1,1],[11.2,1],[11.3,1],[11.4,1],[11.5,1],[11.6,1]
+			]);
+
+        var options = {
+          title: '使用量 vs. 命令数',
+          hAxis: {title: '使用量(log2)', minValue: 0, maxValue: 12},
+          vAxis: {title: '命令数', minValue: 0, maxValue: 200},
+          legend: 'none'
+        };
+
+        var chart = new google.visualization.ScatterChart(document.getElementById('power_law'));
+        chart.draw(data, options);
+      }
+</script>
+
+
+<div class="footnotes">
+<hr />
+<ol>
+<li id="fn1"><p>指自己输入的而且被记录到历史文件的命令，alias不展开<a href="#fnref1">↩</a></p></li>
+<li id="fn2"><p>是我稍微修改过的版本，修改了一些类型错误，为AST节点派生<code>Data</code>和<code>Typeable</code><a href="#fnref2">↩</a></p></li>
+<li id="fn3"><p>贪方便，返回列表而不是<code>Maybe String</code><a href="#fnref3">↩</a></p></li>
+</ol>
+</div>
+  </section>
+
+  <section id="comment">
+    <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+  </section>
+
+</article>
+
+<script type="text/javascript" src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
+<script type="text/javascript" src="../js/post.js"></script>
+
+
+    </div>
+    <footer id="footer">
+      @mgampkay
+    </footer>
+
+    <script type="text/javascript" src="../js/ga.js"></script>
+
+  </body>
+</html>
