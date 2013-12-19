@@ -38,8 +38,8 @@
 
 <p><code>ls</code>用的比想像中多，要想办法降下去。</p>
 <h1 id="实现">实现</h1>
-<p><a href>代码</a></p>
-<p>为了找出历史记录里用过的全部命令，一个完整的Shell脚本解析器是必须的，所以我用了<code>language-sh</code><sup><a href="#fn2" class="footnoteRef" id="fnref2">2</a></sup>，试了一些脚本，基本满足要求。经过解析之后就得到一棵抽象语法树（类型是<code>Command</code>，不要），其中的<code>Statement</code>节点上的第一子节点就是我想要的命令名<sup><a href="#fn3" class="footnoteRef" id="fnref3">3</a></sup>：</p>
+<p><a href="https://gist.github.com/MgaMPKAy/8036738">Gist</a></p>
+<p>为了找出历史记录里用过的全部命令，一个完整的Shell脚本解析器是必须的，所以我用了<a href="https://github.com/MgaMPKAy/language-sh">language-sh</a><sup><a href="#fn2" class="footnoteRef" id="fnref2">2</a></sup>，试了一些脚本，基本满足要求。经过解析之后就得到一棵抽象语法树（类型是<code>Command</code>），其中的<code>Statement</code>节点上的第一子节点就是我想要的命令名<sup><a href="#fn3" class="footnoteRef" id="fnref3">3</a></sup>：</p>
 <pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">getCommand ::</span> <span class="dt">Statement</span> <span class="ot">-&gt;</span> [<span class="dt">String</span>]
 getCommand (<span class="dt">Statement</span> (x<span class="fu">:</span>_) _ _) <span class="fu">=</span> [pretty x]
 getCommand _ <span class="fu">=</span> []</code></pre>
