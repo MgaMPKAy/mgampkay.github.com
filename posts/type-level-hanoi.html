@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>MgaMPKAy's 用Haskell解Hanoi塔</title>
+    <link rel="stylesheet" type="text/css" href="../css/default.css" />
+  </head>
+  <body>
+    <header id="header">
+      <div id="logo">
+        <a href="../">MgaMPKAy's Blog</a>
+      </div>
+      <nav id="navigation">
+        <a href="../">Home</a>
+        <a href="../about.html">About</a>
+        <a href="../archive.html">Archive</a>
+      </nav>
+    </header>
+
+    <div id="content">
+      <h1>用Haskell解Hanoi塔</h1>
+
+      <article>
+  <div class="info">December 23, 2013</div>
+
+  <section id="article-content">
+    <p>灵感来自：<a href="http://www.blogjava.net/sean/archive/2009/11/23/303374.html">用Scala解Hanoi塔</a></p>
+<h1 id="hanoi塔">Hanoi塔</h1>
+<p>一个普通的value-level的实现，用作参考。</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">hanoi ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">String</span><span class="ot">-&gt;</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()
+hanoi <span class="dv">1</span> from to tmp <span class="fu">=</span> <span class="fu">putStrLn</span> <span class="fu">$</span> from <span class="fu">++</span> <span class="st">&quot; -&gt; &quot;</span> <span class="fu">++</span> to
+hanoi n from to tmp <span class="fu">=</span> <span class="kw">do</span>
+    hanoi (n <span class="fu">-</span> <span class="dv">1</span>) from tmp to
+    hanoi <span class="dv">1</span> from to tmp
+    hanoi (n <span class="fu">-</span> <span class="dv">1</span>) tmp to from</code></pre>
+<h1 id="完全的type-level实现">完全的type-level实现</h1>
+<p><a href="https://gist.github.com/MgaMPKAy/8080382">完整代码</a></p>
+<p>这是我第一个想到的实现，我觉得也是最简单、最函数方式的：</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">{-# LANGUAGE TypeOperators  #-}</span>
+<span class="ot">{-# LANGUAGE TypeFamilies #-}</span>
+
+<span class="kw">data</span> <span class="dt">Zero</span>
+<span class="kw">data</span> <span class="dt">Succ</span> a
+
+<span class="kw">data</span> from <span class="fu">:-&gt;</span> to
+<span class="kw">data</span> act1 <span class="fu">:&gt;&gt;</span> act2
+<span class="kw">infixr</span> <span class="fu">:&gt;&gt;</span>
+
+<span class="kw">type</span> family <span class="dt">Hanoi</span> n from to<span class="ot"> tmp ::</span> <span class="fu">*</span>
+<span class="kw">type</span> <span class="kw">instance</span> <span class="dt">Hanoi</span> (<span class="dt">Succ</span> <span class="dt">Zero</span>) from to tmp <span class="fu">=</span> from <span class="fu">:-&gt;</span> to
+<span class="kw">type</span> <span class="kw">instance</span> <span class="dt">Hanoi</span> (<span class="dt">Succ</span> (<span class="dt">Succ</span> n)) from to tmp <span class="fu">=</span>
+    <span class="dt">Hanoi</span> (<span class="dt">Succ</span> n) from tmp to
+        <span class="fu">:&gt;&gt;</span> <span class="dt">Hanoi</span> (<span class="dt">Succ</span> <span class="dt">Zero</span>) from to tmp
+        <span class="fu">:&gt;&gt;</span> <span class="dt">Hanoi</span> (<span class="dt">Succ</span> n) tmp to from</code></pre>
+<p><code>from :-&gt; to</code>表示把盘子从<code>from</code>移动到<code>to</code>，<code>act1 :&gt;&gt; act2</code>表示先执行<code>act1</code>再执行<code>act2</code>。<code>Hanoi</code>就是个type function，以类型作参数，返回类型，整个实现其实就是根据类型构造类型。</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="kw">Left</span>
+<span class="kw">data</span> <span class="dt">Middle</span>
+<span class="kw">data</span> <span class="kw">Right</span>
+
+<span class="kw">type</span> <span class="dt">Three</span> <span class="fu">=</span> <span class="dt">Succ</span> (<span class="dt">Succ</span> (<span class="dt">Succ</span> <span class="dt">Zero</span>))
+
+x <span class="fu">=</span><span class="ot"> undefined ::</span> <span class="dt">Hanoi</span> <span class="dt">Three</span> <span class="kw">Left</span> <span class="kw">Right</span> <span class="dt">Middle</span></code></pre>
+<p>在ghci中查看x的类型就能得到结果：</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell">ghci<span class="fu">&gt;</span> <span class="fu">:</span>t x
+<span class="ot">x ::</span> ((<span class="kw">Left</span> <span class="fu">:-&gt;</span> <span class="kw">Right</span>)
+      <span class="fu">:&gt;&gt;</span> ((<span class="kw">Left</span> <span class="fu">:-&gt;</span> <span class="dt">Middle</span>) <span class="fu">:&gt;&gt;</span> (<span class="kw">Right</span> <span class="fu">:-&gt;</span> <span class="dt">Middle</span>)))
+     <span class="fu">:&gt;&gt;</span> ((<span class="kw">Left</span> <span class="fu">:-&gt;</span> <span class="kw">Right</span>)
+          <span class="fu">:&gt;&gt;</span> ((<span class="dt">Middle</span> <span class="fu">:-&gt;</span> <span class="kw">Left</span>)
+               <span class="fu">:&gt;&gt;</span> ((<span class="dt">Middle</span> <span class="fu">:-&gt;</span> <span class="kw">Right</span>) <span class="fu">:&gt;&gt;</span> (<span class="kw">Left</span> <span class="fu">:-&gt;</span> <span class="kw">Right</span>))))</code></pre>
+<p>虽然不太好看，但是结果是对的（可以写个Show实例就能有好看的效果）。</p>
+<p>原来的scala的实现是在隐式转换的时候进行IO操作，打印出结果。Haskell没隐式转换，编译和运行又明确分离，要在类型推导的过程中执行IO操作几乎是不可能的的（不知道Template Haskell能不能）。</p>
+<p>不管是Haskell还是Scala的实现，盘子数都不能太多，否则ghc类型推导时要大量内存，而scala会生成一个太大的方法，JVM运行不了。</p>
+  </section>
+
+  <section id="comment">
+    <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+  </section>
+
+</article>
+
+<script type="text/javascript" src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
+<script type="text/javascript" src="../js/post.js"></script>
+
+
+    </div>
+    <footer id="footer">
+      @mgampkay
+    </footer>
+
+    <script type="text/javascript" src="../js/ga.js"></script>
+
+  </body>
+</html>
