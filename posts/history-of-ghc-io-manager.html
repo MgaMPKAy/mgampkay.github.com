@@ -104,8 +104,8 @@ MVar做为基本的同步原语，MVar的语义没有要求FIFO的循序阻塞�
 <li>一个OS线程在执行Haskell代码时，在下面的情况下要释放Capability：
 <ul>
 <li>safe call-out（避免阻塞其他非绑定线程）</li>
-<li>另一个OS上执行的call-out返回了 （FFI优先级更高）</li>
-<li>另一个OS被call-in（FFI优先级更高）</li>
+<li>另一个OS线程上执行的call-out返回了 （FFI优先级更高）</li>
+<li>另一个OS线程被call-in（FFI优先级更高）</li>
 <li>要执行的是绑定线程且被绑定在另一个OS线程，直接把Capability传给目标OS线程</li>
 <li>当前进程用于执行绑定线程，但遇到了非绑定线程，直接把Capability传给目标OS线程</li>
 <li>在该OS线程上的绑定线程结束</li>
@@ -131,10 +131,9 @@ MVar做为基本的同步原语，MVar的语义没有要求FIFO的循序阻塞�
 </ol>
 <p>原本每个safe out-call都需要占用一个OS线程，有n个Haskell线程同时执行safe out-call就需要使用n+1个OS线程，通过IO Manager可以把OS线程减少到两个（一个用来执行poll/select，一个用来执行Haskell代码），代价是增加了OS线程间的通信和全局MVar的瓶颈。</p>
 <h1 id="不再是一个capability">不再是一个Capability！</h1>
-<p>根据一节的描述，同一时刻只有一个OS线程在执行Haskell代码，Haskell程序根本没有充分利用到多核，于是多个Capability不在是锁，也不仅有一个……把Capability想象成一个虚拟机，里面有很多线程，一个Capability需要一个OS线程来运行。总之现在能在多个OS线程上同时执行Haskell代码了，上面一些细节就变了例如：</p>
+<p>根据一节的描述，同一时刻只有一个OS线程在执行Haskell代码，Haskell程序根本没有充分利用到多核，于是Capability不再是锁，也不仅有一个……Capability成为虚拟机一样的存在，里面有很多Haskell线程，一个Capability需要一个OS线程来运行。总之现在能在多个OS线程上同时执行Haskell代码了，上面一些细节就变了例如：</p>
 <ol style="list-style-type: decimal">
 <li>unsafe call-out只会阻塞一个OS线程和所在的Capability。</li>
-<li>……</li>
 </ol>
 <p>我们还是回到IO Manager直接相关的好了。</p>
 <h1 id="事件驱动io">事件驱动IO</h1>
@@ -161,7 +160,7 @@ MVar做为基本的同步原语，MVar的语义没有要求FIFO的循序阻塞�
 </ol>
 <p>题外：论文里给出nginx和mighttpd的性能对比，感觉要比<a href="http://www.aosabook.org/en/posa/warp.html">Wrap</a>科学，nginx的性能不是盖的。</p>
 <h1 id="并不特别">并不特别</h1>
-<p>你看Java用1:1模型，然后通过Executor、fork/join把任务细分然后分派到工作线程，还不是活很好的。Python用Gevent也是差不多效果，C直接epoll+coroutine也一样牛逼，连PHP都能借ibev/libevent的东风了，GHC的轻量级线程其实没什么特别的。</p>
+<p>你看Java用1:1模型，然后通过Executor、fork/join把任务细分然后分派到工作线程，还不是活很好的。Python用Gevent也是差不多效果，C直接epoll+coroutine也一样牛逼（<a href="https://github.com/lpereira/lwan">lawn</a>），连PHP都能借ibev/libevent的东风了（<a href="http://reactphp.org/">React</a>），<a href="http://www.hhvm.com/blog/1817/fastercgi-with-hhvm">HHVM</a>甚至也实现了类似的服务器，GHC的轻量级线程其实没什么特别的，GHC IO Manager其实就是个non-blocking IO + IO multiplexing封装。</p>
 <p>我也一直在想，Haskell有什么独一无二的、有用的特性是其他语言难以模仿的？我现在能感受到的，更多的是函数式的好，而不是牛逼的语言特性和运行时。</p>
 <div class="footnotes">
 <hr />
