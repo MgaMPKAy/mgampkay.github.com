@@ -33,8 +33,7 @@
 
 <div id="power_law" style="width: 600px; height: 300px;"></div>
 
-<p>这10%的命令占了80%的使用量:</p>
-<div id="top_chart" style="width: 600px;"></div>
+<div id="pie_chart" style="width: 600px; height: 400px;"></div>
 
 <p><code>ls</code>用的比想像中多，要想办法降下去。</p>
 <h1 id="实现">实现</h1>
@@ -57,7 +56,7 @@ collectCommand <span class="fu">=</span> everything (<span class="fu">++</span>)
       function drawChart(){
 	  drawWeekdateChart();
 	  drawHourChart();
-	  drawTable();
+	  drawPie();
 	  drawScatter();
       }
 
@@ -90,16 +89,20 @@ collectCommand <span class="fu">=</span> everything (<span class="fu">++</span>)
 	  var chart = new google.visualization.ColumnChart(document.getElementById('hour_chart'));
 	  chart.draw(data, options);
       }
-      function drawTable() {
-        var data = new google.visualization.DataTable();
-        data.addColumn('string', '命令');
-        data.addColumn('number', '次数');
-        data.addRows([
-	      ["ls",3253],["cd",1785],["\\rm",1152],["zathura",1150],["cat",992],["sudo",770],["lsl",703],["cp",614],["grep",573],["..",529],["opera",516],["du",487],["journalctl",441],["a-router",439],["a-package",431],["htop",397],["echo",390],["awk",344],["ex",330],["./a.out",308],["mplayer",297],["gcc",277],["alsamixer",250],["a-new-word",245],["source",244],["mv",232],["mkdir",229],["tar",225],["git",208],["poweroff",197],["hugs",193],["curl",180],["php",162],["sync",159],["ssh",158],["a-mount-oldu",156],["cabal",146],["wc",145],["wget",144],["history",132],["less",130],["file",125],["darcs",123],["runhugs",122],["exit",121],["a-setup",121],["touch",120],["man",119],["rev",118],["head",116],["cut",113],["cdw",113],["a-kill-emacs",110],["find",109],["a-play-xiami",108],["ghci",105]
-        ]);
 
-        var table = new google.visualization.Table(document.getElementById('top_chart'));
-        table.draw(data, {showRowNumber: true, page: 'enable'});
+      function drawPie() {
+      var data = google.visualization.arrayToDataTable([
+	      ["命令", "次数"],
+	      ["ls",3253],["cd",1785],["\\rm",1152],["zathura",1150],["cat",992],["sudo",770],["lsl",703],["cp",614],["grep",573],["..",529],["opera",516],["du",487],["journalctl",441],["a-router",439],["a-package",431],["htop",397],["echo",390],["awk",344],["ex",330],["./a.out",308],["mplayer",297],["gcc",277],["alsamixer",250],["a-new-word",245],["source",244],["mv",232],["mkdir",229],["tar",225],["git",208],["poweroff",197],["hugs",193],["curl",180],["php",162],["sync",159],["ssh",158],["a-mount-oldu",156],["cabal",146],["wc",145],["wget",144],["history",132],["less",130],["file",125],["darcs",123],["runhugs",122],["exit",121],["a-setup",121],["touch",120],["man",119],["rev",118],["head",116],["cut",113],["cdw",113],["a-kill-emacs",110],["find",109],["a-play-xiami",108],["ghci",105], ['其它', 5617]
+          ]);
+
+      var options = {
+		  title: '10%的命令占了80%的使用量',
+	      pieSliceText: 'label',
+      };
+
+      var chart = new google.visualization.PieChart(document.getElementById('pie_chart'));
+          chart.draw(data, options);
       }
 
       function drawScatter() {
