@@ -40,7 +40,7 @@
 <p>注意，Stream类型里用了一个Existential quantification，forall s，表示使用Stream a类型的<strong>用户</strong>是不知道这个s的具体是什么类型，他只知道存在着一个s而已。一个类型不明的数据是完全没用的，所以Stream a还提供了stepper函数，这个函数刚好能接受s类型的参数。这么说当用户有一个Stream a类型的数据时，他能做的就是用这个s调用这个stepper函数，这可能产生一个新的s1（包装在Step里），s1和s的类型是相同的，用户可以继续新状态调用stepper，一直迭代到Done。</p>
 <p>一句话总结：状态对用户是透明的，用户不知道具体状态是什么，只能不断产生更多的状态和输出值。</p>
 <p>如果不用Existential quantification，能实现同样的效果吗？</p>
-<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">MyStream</span> a s <span class="fu">=</span> <span class="dt">Stream</span> <span class="fu">!</span>(s <span class="ot">-&gt;</span> <span class="dt">Step</span> a s) <span class="fu">!</span>s</code></pre>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">StreamE</span> a s <span class="fu">=</span> <span class="dt">StreamE</span> <span class="fu">!</span>(s <span class="ot">-&gt;</span> <span class="dt">Step</span> a s) <span class="fu">!</span>s</code></pre>
 <p>我们同样可以实现自然数流和转换到列表：</p>
 <pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">nats ::</span> <span class="dt">StreamE</span> <span class="dt">Int</span> <span class="dt">Int</span>
 nats <span class="fu">=</span> <span class="dt">StreamE</span> next <span class="dv">0</span>
@@ -55,10 +55,10 @@ toList (<span class="dt">StreamE</span> f s') <span class="fu">=</span> loop s'
           <span class="dt">Done</span> <span class="ot">-&gt;</span> []
           <span class="dt">Skip</span> s1 <span class="ot">-&gt;</span> loop s1
           <span class="dt">Yield</span> a s1 <span class="ot">-&gt;</span> a <span class="fu">:</span> loop s1</code></pre>
-<p>注意这里nats暴露了状态的类型Int，这有什么影响？我们实现一个<code>takeS :: Int -&gt; Stream a s -&gt; Stream a s</code>来截取流的前n项。</p>
+<p>注意这里nats暴露了状态的类型Int，这有什么影响？我们实现一个<code>takeS :: Int -&gt; StreamE a s -&gt; StreamE a s</code>来截取流的前n项。</p>
 <p>你要先试试。</p>
 <p>经过一番尝试之后，我发现takeS需要维护多一个状态来记录还要取多少个值，即状态的类型是要改变的：</p>
-<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">takeS ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Stream</span> a s <span class="ot">-&gt;</span> <span class="dt">Stream</span> a (s, <span class="dt">Int</span>)
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">takeS ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">StreamE</span> a s <span class="ot">-&gt;</span> <span class="dt">StreamE</span> a (s, <span class="dt">Int</span>)
 takeS n (<span class="dt">StreamE</span> f s) <span class="fu">=</span> <span class="dt">StreamE</span> next (s, n)
   <span class="kw">where</span>
     next (s, <span class="dv">0</span>) <span class="fu">=</span> <span class="dt">Done</span>
