@@ -87,7 +87,7 @@ MVar做为基本的同步原语，MVar的语义没有要求FIFO的循序阻塞�
 <p>一些要求和解决方法：</p>
 <ol style="list-style-type: decimal">
 <li>safe out-call只阻塞发起调用的Haskell线程</li>
-<li>区分bound和unbound的Haskell线程，被绑定的Haskell线程必须在同一个OS线程上执行，不能迁移</li>
+<li>区分bound和unbound的Haskell线程，绑定线程上的FFI必须在同一个OS线程上执行</li>
 <li>in-call时产生一个绑定的Haskell线程</li>
 <li>主线程是绑定的</li>
 </ol>
@@ -129,7 +129,7 @@ MVar做为基本的同步原语，MVar的语义没有要求FIFO的循序阻塞�
 <li>如果通知用的描述符可读，从通知用的描述符读1字节</li>
 <li>通过线程提供的MVar通知它们文件描述符可读或可写</li>
 </ol>
-<p>原本每个safe out-call都需要占用一个OS线程，有n个Haskell线程同时执行safe out-call就需要使用n+1个OS线程，通过IO Manager可以把OS线程减少到两个（一个用来执行poll/select，一个用来执行Haskell代码），代价是增加了OS线程间的通信和全局MVar的瓶颈。</p>
+<p>每个safe out-call都需要占用一个OS线程，如果同时有大量阻塞的safe out-call就需要大量的线程。所以当safe out-call要使用的文件描述符能用poll/select等待时，可以通过IO Manager把同时存在的OS线程数大大减少（至少有一个执行Haskell代码，一个来执行poll/select，可读或可写时再用别的OS线程进行非阻塞IO），代价是增加了OS线程间的通信和全局MVar的瓶颈。</p>
 <h1 id="不再是一个capability">不再是一个Capability！</h1>
 <p>根据一节的描述，同一时刻只有一个OS线程在执行Haskell代码，Haskell程序根本没有充分利用到多核，于是Capability不再是锁，也不仅有一个……Capability成为虚拟机一样的存在，里面有很多Haskell线程，一个Capability需要一个OS线程来运行。总之现在能在多个OS线程上同时执行Haskell代码了，上面一些细节就变了例如：</p>
 <ol style="list-style-type: decimal">
