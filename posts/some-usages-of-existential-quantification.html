@@ -28,8 +28,8 @@
     <p>主要介绍一下ExistentialQuantification在Haskell里的应用，稍微提下为什么有人说这是个anti-pattern。</p>
 <h1 id="stream-fusion">Stream Fusion</h1>
 <p>先简单介绍一下stream fusion吧，stream fusion通过把列表（或其他数据结构）转换成一个通用Stream类型，然后通过rewrite rule消除中间的Stream转换，减少中间数据结构的生成实现了优化。这里我不讲优化，只讲Existential Quantification的使用。</p>
-<p>stream-fusion中有两个关键的数据类型（代码简化自stream-fusion 0.1.2.5，去掉主要用于优化的Unlifted）：</p>
-<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">Stream</span> a <span class="fu">=</span> forall s <span class="ot">=&gt;</span>
+<p>stream-fusion中有两个关键的数据类型（代码简化自stream-fusion 0.1.2.5）：</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">Stream</span> a <span class="fu">=</span> forall s<span class="fu">.</span>
     <span class="dt">Stream</span> <span class="fu">!</span>(s <span class="ot">-&gt;</span> <span class="dt">Step</span> a s)  <span class="co">-- a stepper function</span>
     <span class="fu">!</span>s                       <span class="co">-- an initial state</span>
 
