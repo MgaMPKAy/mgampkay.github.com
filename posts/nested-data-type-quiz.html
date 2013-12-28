@@ -58,7 +58,7 @@ toList (<span class="dt">SuccP</span> f) <span class="fu">=</span>
 <span class="ot">    flatFork ::</span> [<span class="dt">Fork</span> a] <span class="ot">-&gt;</span> [a]
     flatFork [] <span class="fu">=</span> []
     flatFork ((<span class="dt">Fork</span> x y)<span class="fu">:</span>fs) <span class="fu">=</span> [x, y] <span class="fu">++</span> flatFork fs</code></pre>
-<p>还是根据类型把需要的函数补上去而已。</p>
+<p>还是根据类型把需要的函数补上去而已，而且<code>toList</code>是多态递归的（递归调用时参数类型会改变），必须要写函数签名。</p>
 <p>下面再完成另一个方向的转换<sup><a href="#fn1" class="footnoteRef" id="fnref1">1</a></sup>：</p>
 <pre class="sourceCode haskell"><code class="sourceCode haskell">fromList []  <span class="fu">=</span> <span class="kw">Nothing</span>
 fromList [x] <span class="fu">=</span> <span class="kw">Just</span> <span class="fu">$</span> <span class="dt">ZeroP</span> x
