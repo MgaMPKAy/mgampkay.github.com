@@ -44,8 +44,8 @@ threadDelay (<span class="dv">10</span><span class="fu">^</span><span class="dv"
 
 forkIO <span class="fu">$</span> fast <span class="fu">&gt;&gt;=</span> <span class="fu">print</span></code></pre>
 <p>我们分别在两个线程里执行<code>runRedis</code>，理想情况下<code>blpop</code>会阻塞一下，而<code>get</code>会马上返回。但是Hedis会把这两个请求放在同一个连接上分两次发送，结果<code>get</code>必须等<code>blpop</code>返回之后才能返回。</p>
-<p>如果你没有<code>runRedis</code>在里面对结果求值，请求就<sub>可能</sub>和其他<code>runRedis</code>里的请求共用一个连接。</p>
-<p>我的临时应对方案就是在<code>runRedis</code>的最后对结果进行求值，强制流水线结束，防止对后续请求的影响（实际上会让后续请求使用连接池里其他空闲连接）：</p>
+<p>如果你没有在<code>runRedis</code>里面对结果求值，请求就<em>可能</em>和其他<code>runRedis</code>里的请求共用一个连接。</p>
+<p>我的临时应对方案就是在<code>runRedis</code>的最后对结果进行求值，强制流水线结束，防止对后续请求产生影响（实际上会让后续请求使用连接池里其他空闲连接）：</p>
 <pre class="sourceCode haskell"><code class="sourceCode haskell">runRedis' conn cmd <span class="fu">=</span> runRedis conn <span class="fu">$</span> <span class="kw">do</span>
     result <span class="ot">&lt;-</span> cmd
     result <span class="ot">`seq`</span> <span class="fu">return</span> result</code></pre>
