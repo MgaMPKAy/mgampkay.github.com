@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>MgaMPKAy's Hedis的自动流水线</title>
+    <link rel="stylesheet" type="text/css" href="../css/default.css" />
+  </head>
+  <body>
+    <header id="header">
+      <div id="logo">
+        <a href="../">MgaMPKAy's Blog</a>
+      </div>
+      <nav id="navigation">
+        <a href="../">Home</a>
+        <a href="../about.html">About</a>
+        <a href="../archive.html">Archive</a>
+      </nav>
+    </header>
+
+    <div id="content">
+      <h1>Hedis的自动流水线</h1>
+
+      <article>
+  <div class="info">January  4, 2014</div>
+
+  <section id="article-content">
+    <p><a href="http://hackage.haskell.org/package/hedis-0.6.2">Hedis</a>是Haskelk目前最完善的redis绑定，而且有个独特的特性：<a href="http://informatikr.com/2012/redis-pipelining.html">自动流水线</a>，号称是最优的。</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell">conn <span class="ot">&lt;-</span> connect defaultConnectInfo
+
+runRedis conn <span class="fu">$</span> <span class="kw">do</span>
+    foo <span class="ot">&lt;-</span> get <span class="st">&quot;foo&quot;</span>
+    bar <span class="ot">&lt;-</span> get <span class="st">&quot;bar&quot;</span>
+    liftIO <span class="fu">$</span> <span class="fu">print</span> (foo,bar)</code></pre>
+<p>在这个简单的例子里，据作者说这两个<code>get</code>命令被pipeline，完全不需用户干预。我用Wireshark查看发现两个<code>get</code>请求会在一个连接上分两次发送，没有达到号称的最优。更严重的问题是自动流水线是通过Lazy IO实现的，而且跨过多个<code>runRedis</code>块，然后问题就来了：</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell">conn <span class="ot">&lt;-</span> connect defaultConnectInfo
+
+<span class="kw">let</span> fast    <span class="fu">=</span> runRedis conn (get <span class="st">&quot;nextid&quot;</span>)
+    blocked <span class="fu">=</span> runRedis conn (blpop [<span class="st">&quot;queue&quot;</span>] <span class="dv">10</span>)
+
+forkIO <span class="fu">$</span> blocked <span class="fu">&gt;&gt;=</span> <span class="fu">print</span>
+
+threadDelay (<span class="dv">10</span><span class="fu">^</span><span class="dv">6</span>)
+
+forkIO <span class="fu">$</span> fast <span class="fu">&gt;&gt;=</span> <span class="fu">print</span></code></pre>
+<p>我们分别在两个线程里执行<code>runRedis</code>，理想情况下<code>blpop</code>会阻塞一下，而<code>get</code>会马上返回。但是Hedis会把这两个请求放在同一个连接上分两次发送，结果<code>get</code>必须等<code>blpop</code>返回之后才能返回。</p>
+<p>如果你没有<code>runRedis</code>在里面对结果求值，请求就<sub>可能</sub>和其他<code>runRedis</code>里的请求共用一个连接。</p>
+<p>我的临时应对方案就是在<code>runRedis</code>的最后对结果进行求值，强制流水线结束，防止对后续请求的影响（实际上会让后续请求使用连接池里其他空闲连接）：</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell">runRedis' conn cmd <span class="fu">=</span> runRedis conn <span class="fu">$</span> <span class="kw">do</span>
+    result <span class="ot">&lt;-</span> cmd
+    result <span class="ot">`seq`</span> <span class="fu">return</span> result</code></pre>
+<p>也就是说，有大量<code>blpop</code>这些可能阻塞的请求时，就要用很大的连接池来防止非阻塞请求被阻塞。</p>
+<p>Lazy IO真是坑，Hedis的自动流水线反而让这库变得难用了。</p>
+  </section>
+
+  <section id="comment">
+    <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+  </section>
+
+</article>
+
+<script type="text/javascript" src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
+<script type="text/javascript" src="../js/post.js"></script>
+
+
+    </div>
+    <footer id="footer">
+      @mgampkay
+    </footer>
+
+    <script type="text/javascript" src="../js/ga.js"></script>
+
+  </body>
+</html>
