@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>MgaMPKAy's 在Monad返回多态值</title>
+    <link rel="stylesheet" type="text/css" href="../css/default.css" />
+  </head>
+  <body>
+    <header id="header">
+      <div id="logo">
+        <a href="../">MgaMPKAy's Blog</a>
+      </div>
+      <nav id="navigation">
+        <a href="../">Home</a>
+        <a href="../about.html">About</a>
+        <a href="../archive.html">Archive</a>
+      </nav>
+    </header>
+
+    <div id="content">
+      <h1>在Monad返回多态值</h1>
+
+      <article>
+  <div class="info">January 14, 2014</div>
+
+  <section id="article-content">
+    <p>今天在写一个parser，其中要解析整数和小数，想直接用parsec里的<code>naturalOrFloat :: Parser (Either Integer Double)</code>，但它不处理正负号，我要自己加上对正负号的解析。</p>
+<p>我第一个想法就是遇到负号返回<code>negate :: Num a =&gt; a -&gt; a</code>，正号或没用就返回<code>id</code>，然后作用在<code>naturalOrFloat</code>的结果上：</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">{-# LANGUAGE RankNTypes          #-}</span>
+<span class="ot">{-# LANGUAGE ScopedTypeVariables #-}</span>
+
+<span class="kw">import</span> Text.ParserCombinators.Parsec
+<span class="kw">import</span> Text.ParserCombinators.Parsec.Token (naturalOrFloat)
+<span class="kw">import</span> Text.ParserCombinators.Parsec.Language (haskell)
+
+<span class="co">-- | 解析符号，返回符号函数</span>
+<span class="ot">parseSign ::</span> <span class="kw">Num</span> a <span class="fu">=</span> <span class="dt">Parser</span> (a <span class="ot">-&gt;</span> a)
+parseSign <span class="fu">=</span> (char <span class="ch">'-'</span> <span class="fu">&gt;&gt;</span> <span class="fu">return</span> <span class="fu">negate</span>)
+        <span class="fu">&lt;|&gt;</span> (char <span class="ch">'+'</span> <span class="fu">&gt;&gt;</span> <span class="fu">return</span> <span class="fu">id</span>)
+        <span class="fu">&lt;|&gt;</span> (<span class="fu">return</span> <span class="fu">id</span>)
+
+<span class="co">-- | 应用符号函数</span>
+<span class="ot">applySign ::</span> (forall a<span class="fu">.</span> <span class="kw">Num</span> a <span class="ot">=&gt;</span> a <span class="ot">-&gt;</span> a)
+             <span class="ot">-&gt;</span> (<span class="dt">Either</span> <span class="dt">Integer</span> <span class="dt">Double</span>) <span class="ot">-&gt;</span> (<span class="dt">Either</span> <span class="dt">Integer</span> <span class="dt">Double</span>)
+applySign f (<span class="kw">Left</span>  i) <span class="fu">=</span> <span class="kw">Left</span>  (f i)
+applySign f (<span class="kw">Right</span> d) <span class="fu">=</span> <span class="kw">Right</span> (f d)
+
+<span class="co">-- | 解析数值</span>
+<span class="ot">parseNumber ::</span> <span class="dt">Parser</span> (<span class="dt">Either</span> <span class="dt">Integer</span> <span class="dt">Double</span>)
+parseNumber <span class="fu">=</span> <span class="kw">do</span>
+    sign <span class="ot">&lt;-</span> parseSign
+    num  <span class="ot">&lt;-</span> naturalOrFloat haskell
+    <span class="fu">return</span> <span class="fu">$</span> applySign sign num</code></pre>
+<p>但是，GHC说类型错误，因为<code>applySign</code>需要一个多态函数，而<code>parseSign</code>返回的是个单态的函数。所以<code>parseSign</code>的类型应该是：<code>Parser (forall a. Num a =&gt; a -&gt; a)</code>，就是标题所说，要在Monad返回多态值。</p>
+<p>自己折腾一番之后，到群上问了一下，<a href="http://weibo.com/u/1914643755">@阅千人而惜知己</a>指出这在Hindley–Milner类型系统是不行的，还给出了王垠的一篇相关的<a href="http://yinwang0.wordpress.com/2012/03/05/ghc-type/">文章</a>，在那篇文章有提到first-class polymorphism，google一下发现GHC也支持(通过<code>ImpredicativeTypes</code>扩展)，不过类型推导不了，要自己写类型：</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">{-# LANGUAGE RankNTypes          #-}</span>
+<span class="ot">{-# LANGUAGE ImpredicativeTypes  #-}</span>
+<span class="ot">{-# LANGUAGE ScopedTypeVariables #-}</span>
+<span class="ot">{-# LANGUAGE LiberalTypeSynonyms #-}</span>
+
+<span class="ot">parseSign ::</span> <span class="dt">Parser</span> (forall a<span class="fu">.</span> <span class="kw">Num</span> a <span class="ot">=&gt;</span> a <span class="ot">-&gt;</span> a)
+parseSign <span class="fu">=</span> (char <span class="ch">'-'</span> <span class="fu">&gt;&gt;</span> return' <span class="fu">negate</span>)
+        <span class="fu">&lt;|&gt;</span> (char <span class="ch">'+'</span> <span class="fu">&gt;&gt;</span> return' <span class="fu">id</span>)
+        <span class="fu">&lt;|&gt;</span> (return' <span class="fu">id</span>)
+  <span class="kw">where</span>
+    <span class="co">-- 返回多态值的return</span>
+    return' <span class="fu">=</span><span class="ot"> return ::</span> <span class="kw">Monad</span> m <span class="ot">=&gt;</span> (forall a<span class="fu">.</span> <span class="kw">Num</span> a <span class="ot">=&gt;</span> a <span class="ot">-&gt;</span> a)
+                                <span class="ot">-&gt;</span> m (forall a<span class="fu">.</span> <span class="kw">Num</span> a <span class="ot">=&gt;</span> a <span class="ot">-&gt;</span> a)
+
+parseNumber <span class="fu">=</span> <span class="kw">do</span>
+    (<span class="ot">sign ::</span> forall a<span class="fu">.</span> <span class="kw">Num</span> a <span class="ot">=&gt;</span> a <span class="ot">-&gt;</span> a) <span class="ot">&lt;-</span> parseSign
+    num <span class="ot">&lt;-</span> naturalOrFloat haskell
+    <span class="fu">return</span> <span class="fu">$</span> applySign sign num</code></pre>
+<p>Impredicative types可以看作higher-rank types的扩展，可以让全称量词出现在类型的任意位置，甚至可以在数据类型里。</p>
+<p>因为<code>return'</code>的类型很长，而且模式很明显，所以还可以抽象出来：</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">{-# LANGUAGE ConstraintKinds #-}</span>
+
+<span class="kw">type</span> <span class="dt">Poly</span> c f <span class="fu">=</span> forall a<span class="fu">.</span> c a <span class="ot">=&gt;</span> f a
+
+<span class="kw">type</span> <span class="dt">PolyReturn</span> c f <span class="fu">=</span> <span class="kw">Monad</span> m <span class="ot">=&gt;</span> (<span class="dt">Poly</span> c f) <span class="ot">-&gt;</span> m (<span class="dt">Poly</span> c f)
+
+<span class="kw">type</span> <span class="dt">Endo</span> a <span class="fu">=</span> (a <span class="ot">-&gt;</span> a)
+
+<span class="ot">returnNumEndo ::</span> <span class="dt">PolyReturn</span> <span class="kw">Num</span> <span class="dt">Endo</span>
+returnNumEndo <span class="fu">=</span> <span class="fu">return</span></code></pre>
+  </section>
+
+  <section id="comment">
+    <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+  </section>
+
+</article>
+
+<script type="text/javascript" src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
+<script type="text/javascript" src="../js/post.js"></script>
+
+
+    </div>
+    <footer id="footer">
+      @mgampkay
+    </footer>
+
+    <script type="text/javascript" src="../js/ga.js"></script>
+
+  </body>
+</html>
