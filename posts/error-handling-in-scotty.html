@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>MgaMPKAy's 在scotty进行错误处理</title>
+    <link rel="stylesheet" type="text/css" href="../css/default.css" />
+  </head>
+  <body>
+    <header id="header">
+      <div id="logo">
+        <a href="../">MgaMPKAy's Blog</a>
+      </div>
+      <nav id="navigation">
+        <a href="../">Home</a>
+        <a href="../about.html">About</a>
+        <a href="../archive.html">Archive</a>
+      </nav>
+    </header>
+
+    <div id="content">
+      <h1>在scotty进行错误处理</h1>
+
+      <article>
+  <div class="info">January 18, 2014</div>
+
+  <section id="article-content">
+    <p>在最后两个星期才开始写这学期的项目设计，AngularJS也是现学现卖，虽然时间有点赶，我自己还是比较满意的。因为是个挺RESTful的东西，服务器端是用scotty写的，最初有很多嵌套的if…then…else处理错误：</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">handleSend ::</span> <span class="dt">AppState</span> <span class="ot">-&gt;</span> <span class="dt">ActionM</span> ()
+handleSend <span class="dt">AppState</span>{<span class="fu">..</span>} <span class="fu">=</span> <span class="kw">do</span>
+    logined <span class="ot">&lt;-</span> isLogined tokenStore
+    when logined <span class="fu">$</span> <span class="kw">do</span>
+        msend <span class="ot">&lt;-</span> jsonDataMaybe
+        resp <span class="ot">&lt;-</span> <span class="kw">case</span> msend <span class="kw">of</span>
+            <span class="kw">Nothing</span>  <span class="ot">-&gt;</span> <span class="fu">return</span> <span class="fu">$</span> <span class="dt">Fail</span> <span class="dv">0</span> <span class="st">&quot;请输入完整信息&quot;</span>
+            <span class="kw">Just</span> req<span class="fu">@</span><span class="dt">SendMsg</span>{<span class="fu">..</span>} <span class="ot">-&gt;</span> <span class="kw">do</span>
+                isfriend <span class="ot">&lt;-</span> isFriend database from to
+                <span class="kw">if</span> (<span class="fu">not</span> isfriend)
+                    <span class="kw">then</span> <span class="fu">return</span> <span class="fu">$</span> <span class="dt">Fail</span> <span class="dv">1</span> <span class="st">&quot;发送失败&quot;</span>
+                    <span class="kw">else</span> <span class="kw">do</span>
+                        tmsg <span class="ot">&lt;-</span> liftIO <span class="fu">$</span> tagTime req
+                        liftIO <span class="fu">$</span> void <span class="fu">$</span> forkIO <span class="fu">$</span> <span class="kw">do</span>
+                            sendMessage messageQueue (<span class="dt">TM</span> tmsg)
+                            insertMessage database (<span class="dt">TM</span> tmsg)
+                        <span class="fu">return</span> <span class="fu">$</span> <span class="dt">Success</span> tmsg
+        jsonResp resp</code></pre>
+<p>简直无法直视啊。其实我需要的只是early return。想过用monad transformer，但是只能实现类似<code>ActionT a (ErrorT b IO)</code>的monad，<code>ErrorT</code>在<code>ActionT</code>之下，在<code>ErrorT</code>里的短路是不会影响到<code>ActionT</code>的。后来我才发现<code>ActionT</code>其实就是有<code>ErrorT</code>的，可以直接用。</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">handleSend ::</span> <span class="dt">AppState</span> <span class="ot">-&gt;</span> <span class="dt">ActionT</span> <span class="dt">ErrorResult</span> <span class="dt">IO</span> ()
+handleSend <span class="dt">AppState</span>{<span class="fu">..</span>} <span class="fu">=</span> handleError <span class="fu">$</span> <span class="kw">do</span>
+    isLogined tokenStore <span class="ot">`expectTrue`</span> <span class="dt">Unauth</span>
+
+    req<span class="fu">@</span><span class="dt">SendMsg</span>{<span class="fu">..</span>} <span class="ot">&lt;-</span> jsonData <span class="fu">&lt;?&gt;</span> <span class="dt">Fail</span> <span class="dv">0</span> <span class="st">&quot;请输入完整信息&quot;</span>
+
+    isFriend database from to <span class="ot">`expectTrue`</span> <span class="dt">Fail</span> <span class="dv">1</span> <span class="st">&quot;发送失败&quot;</span>
+
+    tmsg <span class="ot">&lt;-</span> liftIO <span class="fu">$</span> tagTime req
+    liftIO <span class="fu">$</span> void <span class="fu">$</span> forkIO <span class="fu">$</span> <span class="kw">do</span>
+        sendMessage messageQueue (<span class="dt">TM</span> tmsg)
+        insertMessage database (<span class="dt">TM</span> tmsg)
+    json <span class="fu">$</span> <span class="dt">Success</span> tmsg</code></pre>
+<p>其中用到一些自己定义的函数，用来检查结果和加上自定义的错误类型（ErrorResult ）：</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell">act <span class="fu">&lt;?&gt;</span> err <span class="fu">=</span> act <span class="ot">`rescue`</span> (<span class="fu">const</span> <span class="fu">$</span> raise err)
+
+expectTrue act err <span class="fu">=</span> <span class="kw">do</span>
+    true <span class="ot">&lt;-</span> act
+    when (<span class="fu">not</span> true) (raise err)
+
+expectRight act err <span class="fu">=</span> act <span class="fu">&gt;&gt;=</span> <span class="fu">either</span> (<span class="fu">const</span> <span class="fu">$</span> raise <span class="fu">error</span>) <span class="fu">return</span>
+
+expectJust act err <span class="fu">=</span> act <span class="fu">&gt;&gt;=</span> <span class="fu">maybe</span> (raise err) <span class="fu">return</span>
+
+handleError act <span class="fu">=</span> act <span class="ot">`rescue`</span> json</code></pre>
+<p>还有用defaultHandler替换全局的异常处理函数。另一个问题是<code>raise</code>和<code>rescue</code>只能处理<code>ErrorT</code>里的错误，不能处理异常（<code>Control.Exception</code>），那些异常还是要自己处理。</p>
+<hr />
+
+<p><s>正文:</s></p>
+<p>好像是两天前，带着报告和笔记本准备去答辩，徘徊了半个钟才找到老师。</p>
+<pre><code>老师： 答辩还是交报告？
+我：交报告</code></pre>
+<p>啊，终于不用被答辩啦，虽然感觉不太对劲。</p>
+  </section>
+
+  <section id="comment">
+    <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+  </section>
+
+</article>
+
+<script type="text/javascript" src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
+<script type="text/javascript" src="../js/post.js"></script>
+
+
+    </div>
+    <footer id="footer">
+      @mgampkay
+    </footer>
+
+    <script type="text/javascript" src="../js/ga.js"></script>
+
+  </body>
+</html>
