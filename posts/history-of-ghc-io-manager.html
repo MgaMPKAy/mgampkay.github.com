@@ -87,7 +87,7 @@ MVar做为基本的同步原语，MVar的语义没有要求FIFO的循序阻塞�
 <p>一些要求和解决方法：</p>
 <ol style="list-style-type: decimal">
 <li>safe out-call只阻塞发起调用的Haskell线程</li>
-<li>区分bound和unbound的Haskell线程，绑定线程上的FFI必须在同一个OS线程上执行</li>
+<li>区分bound和unbound的Haskell线程，绑定线程上的<strong>FFI必须在同一个OS线程上执行</strong></li>
 <li>in-call时产生一个绑定的Haskell线程</li>
 <li>主线程是绑定的</li>
 </ol>
