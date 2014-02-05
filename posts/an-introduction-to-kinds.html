@@ -83,7 +83,7 @@ typeOf1 _ <span class="fu">=</span> typeRep (<span class="dt">Proxy</span><span 
 <pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">(==) ::</span> <span class="kw">Eq</span> a <span class="ot">=&gt;</span> a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Bool</span>   <span class="co">--  约束：a必须是Eq的实例</span>
 <span class="fu">print</span><span class="ot"> ::</span> <span class="kw">Show</span> a <span class="ot">=&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">IO</span> ()    <span class="co">--  约束：a必须是Show的实例</span></code></pre>
 <p><code>Show a</code>、<code>Eq a</code>这样做为一个整体，它们的kind是<code>Constraint</code>，而<code>Show</code>和<code>Eq</code>的kind就是<code>* -&gt; Constraint</code>。</p>
-<p>因为有了kind来表示约束，约束就表现得更像类型，可以通过原有的约束构建新的约束。在<a href="http://mgampkay.github.io/posts/an-introduction-to-the-expression-problem.html">Expression Problem简介</a>的最后，我正烦恼那个约束列表会越来越长，有了<code>ConstraintKinds</code>之后，我就可以为那长长约束写个type constraint synonyms：</p>
+<p>因为有了kind来表示约束，约束就表现得更像类型，可以通过原有的约束构建新的约束。在<a href="./an-introduction-to-the-expression-problem.html">Expression Problem简介</a>的最后，我正烦恼那个约束列表会越来越长，有了<code>ConstraintKinds</code>之后，我就可以为那长长约束写个type constraint synonyms：</p>
 <pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">{--</span>
 <span class="co">data ExprBox = forall a . (Evaluable a, PrettyPrintable a)</span>
 <span class="co">             =&gt; MkExpr {unBox :: a}</span>
