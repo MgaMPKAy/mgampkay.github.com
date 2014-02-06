@@ -72,7 +72,7 @@ parseNumber <span class="fu">=</span> <span class="kw">do</span>
     (<span class="ot">sign ::</span> forall a<span class="fu">.</span> <span class="kw">Num</span> a <span class="ot">=&gt;</span> a <span class="ot">-&gt;</span> a) <span class="ot">&lt;-</span> parseSign
     num <span class="ot">&lt;-</span> naturalOrFloat haskell
     <span class="fu">return</span> <span class="fu">$</span> applySign sign num</code></pre>
-<p>Impredicative types可以看作higher-rank types的扩展，可以让全称量词出现在类型的任意位置，甚至可以在数据类型里。</p>
+<p>Impredicative types可以让全称量词出现在类型的任意位置，甚至可以在数据类型里。</p>
 <p>因为<code>return'</code>的类型很长，而且模式很明显，所以还可以抽象出来：</p>
 <pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">{-# LANGUAGE ConstraintKinds #-}</span>
 
@@ -84,6 +84,19 @@ parseNumber <span class="fu">=</span> <span class="kw">do</span>
 
 <span class="ot">returnNumEndo ::</span> <span class="dt">PolyReturn</span> <span class="kw">Num</span> <span class="dt">Endo</span>
 returnNumEndo <span class="fu">=</span> <span class="fu">return</span></code></pre>
+<h2 id="参数化多态">参数化多态</h2>
+<p>维基百科<a href>Parametric polymorphism</a>说参数化多态可以分为：</p>
+<ul>
+<li>predicative: 类型参数不能实例化多态类型</li>
+<li>impredicative: 类型参数能实例化多态类型</li>
+</ul>
+<p>Impredicative是自指（self-referential）的意思，impredicative type说一个多态类型的类型参数能实例化成多态类型。</p>
+<p>根据rank（我理解为嵌套的<code>-&gt;</code>层数）：</p>
+<ul>
+<li>rank-1: 量词只能在类型的最外层</li>
+<li>rank-k: 对于固定的k，量词最多能在第k层</li>
+<li>rank-n: 量词能在任意层</li>
+</ul>
   </section>
 
   <section id="comment">
