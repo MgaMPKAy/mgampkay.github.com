@@ -65,12 +65,12 @@ expectTrue act err <span class="fu">=</span> <span class="kw">do</span>
     true <span class="ot">&lt;-</span> act
     when (<span class="fu">not</span> true) (raise err)
 
-expectRight act err <span class="fu">=</span> act <span class="fu">&gt;&gt;=</span> <span class="fu">either</span> (<span class="fu">const</span> <span class="fu">$</span> raise <span class="fu">error</span>) <span class="fu">return</span>
+expectRight act err <span class="fu">=</span> act <span class="fu">&gt;&gt;=</span> <span class="fu">either</span> (<span class="fu">const</span> <span class="fu">$</span> raise err) <span class="fu">return</span>
 
 expectJust act err <span class="fu">=</span> act <span class="fu">&gt;&gt;=</span> <span class="fu">maybe</span> (raise err) <span class="fu">return</span>
 
 handleError act <span class="fu">=</span> act <span class="ot">`rescue`</span> json</code></pre>
-<p>还有用defaultHandler替换全局的异常处理函数。另一个问题是<code>raise</code>和<code>rescue</code>只能处理<code>ErrorT</code>里的错误，不能处理异常（<code>Control.Exception</code>），那些异常还是要自己处理。</p>
+<p>还可以defaultHandler替换全局的异常处理函数。另一个问题是<code>raise</code>和<code>rescue</code>只能处理<code>ErrorT</code>里的错误，不能处理异常（<code>Control.Exception</code>），那些异常还是要自己处理。</p>
 <hr />
 
 <p><s>正文:</s></p>
