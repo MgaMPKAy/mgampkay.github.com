@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>MgaMPKAy's 什么是Duck typing？</title>
+    <link rel="stylesheet" type="text/css" href="../css/default.css" />
+  </head>
+  <body>
+    <header id="header">
+      <div id="logo">
+        <a href="../">MgaMPKAy's Blog</a>
+      </div>
+      <nav id="navigation">
+        <a href="../">Home</a>
+        <a href="../about.html">About</a>
+        <a href="../archive.html">Archive</a>
+      </nav>
+    </header>
+
+    <div id="content">
+      <h1>什么是Duck typing？</h1>
+
+      <article>
+  <div class="info">April  4, 2014</div>
+
+  <section id="article-content">
+    <p>听说过duck typing吧，如果没有就先<a href="https://www.google.com.hk/search?q=Duck+typing">Google</a><a href="https://www.google.com.hk/search?q=鸭子类型">一下</a>吧。</p>
+<h2 id="两个问题">两个问题</h2>
+<ol style="list-style-type: decimal">
+<li>Duck typing必须要进行运行时类型检测？</li>
+<li>假设下面不是ruby代码，<code>duck</code>的类型是？（代码来自《冒号课堂》）</li>
+</ol>
+<pre class="sourceCode ruby"><code class="sourceCode ruby"><span class="kw">def</span> shoutOrSwim(duck, flag)
+    flag ? duck.shout : duck.swim
+<span class="kw">end</span></code></pre>
+<p>你要先想想。</p>
+<h2 id="运行时类型检测">运行时类型检测?</h2>
+<p>我现在认为运行时类型检测对duck typing来说不是必须的（几个小时前我还在<a href="https://github.com/MgaMPKAy/mgampkay.github.com/commit/e6636abc7757a01454773ad3d4973f87f479e46c">动摇</a>）。一般情况下，我认为<code>duck</code>必须是个同时支持<code>shout</code>和<code>swim</code>的对象。</p>
+<p>但是有人就说：“在ruby里，只要在运行时程序员自己保证<code>flag</code>为真时<code>duck</code>有<code>shout</code>，<code>flag</code>为假的时候<code>duck</code>有<code>swim</code>就可以了，所以duck不需要同时有两个方法，这在静态语言是做不到的”。</p>
+<p>这里我们不讨论<code>method_missing</code>这些“故意”通过调用不存在的方法而触发的东西，静态语言可以通过依赖类型实现<code>shoutOrSwim</code>，而且<code>duck</code>不须同时有<code>shout</code>和<code>swim</code>。这里我用Haskell模拟一下依赖类型就可以实现<sup><a href="#fn1" class="footnoteRef" id="fnref1">1</a></sup>：</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">{-# LANGUAGE TypeFamilies, DataKinds, ConstraintKinds, GADTs #-}</span>
+<span class="kw">import</span> GHC.Exts (Constraint)
+
+<span class="co">-- Ad-hoc polymorphism</span>
+
+<span class="kw">class</span> <span class="dt">ICanShout</span> a <span class="kw">where</span>
+<span class="ot">  shout ::</span> a <span class="ot">-&gt;</span> <span class="dt">String</span>
+
+<span class="kw">class</span> <span class="dt">ICanSwim</span> a <span class="kw">where</span>
+<span class="ot">  swim ::</span> a <span class="ot">-&gt;</span> <span class="dt">String</span>
+
+<span class="kw">data</span> <span class="dt">Man</span> <span class="fu">=</span> <span class="dt">Man</span>
+<span class="kw">instance</span> <span class="dt">ICanShout</span> <span class="dt">Man</span> <span class="kw">where</span>
+  shout _ <span class="fu">=</span> <span class="st">&quot;Hahaha&quot;</span>
+
+<span class="kw">data</span> <span class="dt">Fish</span> <span class="fu">=</span> <span class="dt">Fish</span>
+<span class="kw">instance</span> <span class="dt">ICanSwim</span> <span class="dt">Fish</span> <span class="kw">where</span>
+  swim _ <span class="fu">=</span> <span class="st">&quot;Swimming&quot;</span>
+
+
+<span class="co">-- Dependent type (Simulating via singleton)</span>
+
+<span class="kw">type</span> family <span class="dt">Select</span> (<span class="ot">flag ::</span> <span class="dt">Bool</span>)<span class="ot"> ::</span> <span class="fu">*</span> <span class="ot">-&gt;</span> <span class="dt">Constraint</span>
+<span class="kw">type</span> <span class="kw">instance</span> <span class="dt">Select</span> <span class="kw">True</span>  <span class="fu">=</span> <span class="dt">ICanShout</span>
+<span class="kw">type</span> <span class="kw">instance</span> <span class="dt">Select</span> <span class="kw">False</span> <span class="fu">=</span> <span class="dt">ICanSwim</span>
+
+<span class="kw">data</span> <span class="dt">SBool</span><span class="ot"> ::</span> <span class="dt">Bool</span> <span class="ot">-&gt;</span> <span class="fu">*</span> <span class="kw">where</span>
+    <span class="dt">STrue</span><span class="ot"> ::</span> <span class="dt">SBool</span> <span class="kw">True</span>
+    <span class="dt">SFalse</span><span class="ot"> ::</span> <span class="dt">SBool</span> <span class="kw">False</span>
+
+<span class="ot">shoutOrSwim ::</span> (<span class="dt">Select</span> b) a <span class="ot">=&gt;</span> <span class="dt">SBool</span> b <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">String</span>
+shoutOrSwim <span class="dt">STrue</span> duck <span class="fu">=</span> shout duck
+shoutOrSwim <span class="dt">SFalse</span> duck <span class="fu">=</span> swim duck</code></pre>
+<p>因为Haskell的记录类型不是结构化类型的，所以代码的第一部分通过type class实现重载，但这不是重点。在第二部分，我们通过用type family和GADT模拟依赖类型，描述了<code>Bool</code>和<code>ICanShout</code>、<code>ICanSwim</code>这两个约束之间的关系，所以在<code>shoutOrSwim</code>的两个分支，<code>duck</code>的类型约束是不同的。这也可以理解为<code>shoutOrSwim</code>根据第一个参数返回不同类型的函数：</p>
+<pre class="ghci"><code>ghci&gt; :t shoutOrSwim SFalse
+shoutOrSwim SFalse :: ICanSwim a =&gt; a -&gt; String
+
+ghci&gt; :t shoutOrSwim STrue
+shoutOrSwim STrue :: ICanShout a =&gt; a -&gt; String</code></pre>
+<p>在一个直接支持的依赖类型和结构化类型的语言，实现<code>shoutOrSwim</code>会更简洁，但是思路是一样的。所以我认为结构化类型（或类似type class的重载方法）加上依赖类型就能覆盖大部分Duck typing的用法，特别是不做<code>shoutOrSwim</code>这种坑爹的事，根本就不需要依赖类型。</p>
+<h2 id="什么是duck-typing">什么是Duck typing？</h2>
+<p>Duck typing没有准确的定义，但是我认为这句话概括了它的本质：</p>
+<blockquote>
+<p>When I see a bird that walks like a duck and swims like a duck and quacks like a duck, I call that bird a duck.</p>
+</blockquote>
+<p>也就是说，我们更关心一个对象的行为，而不关心它到底是什么。一个对象的行为既可以通过结构化类型来隐式表达，又可以通过接口、type class显式表达，这些都不需要运行时类型检测。我甚至可以说Duck typing就是面向接口编程，和动、静态根本就关系。</p>
+<div class="footnotes">
+<hr />
+<ol>
+<li id="fn1"><p>其实我偷懒了，因为<code>shoutOrSwim</code>里用是<code>SBool</code>，其实还需要一个把<code>Bool</code>转成<code>SBool</code>的过程<a href="#fnref1">↩</a></p></li>
+</ol>
+</div>
+  </section>
+
+  <section id="comment">
+    <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+  </section>
+
+</article>
+
+<script type="text/javascript" src="../js/post.js"></script>
+
+
+    </div>
+    <footer id="footer">
+      @mgampkay
+    </footer>
+
+    <script type="text/javascript" src="../js/ga.js"></script>
+
+  </body>
+</html>
