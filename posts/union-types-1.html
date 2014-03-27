@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>MgaMPKAy's Union types (Part 1)</title>
+    <link rel="stylesheet" type="text/css" href="../css/default.css" />
+  </head>
+  <body>
+    <header id="header">
+      <div id="logo">
+        <a href="../">MgaMPKAy's Blog</a>
+      </div>
+      <nav id="navigation">
+        <a href="../">Home</a>
+        <a href="../about.html">About</a>
+        <a href="../archive.html">Archive</a>
+      </nav>
+    </header>
+
+    <div id="content">
+      <h1>Union types (Part 1)</h1>
+
+      <article>
+  <div class="info">March 28, 2014</div>
+
+  <section id="article-content">
+    <p>不是C语言的union哦。</p>
+<h2 id="问题">问题</h2>
+<p>假设下面不是ruby代码，duck的类型是什么？（代码来自《冒号课堂》）</p>
+<pre class="sourceCode ruby"><code class="sourceCode ruby">rubydef shoutOrSwim(duck, flag)
+    flag ? duck.shout : duck.swim
+<span class="kw">end</span></code></pre>
+<p>你要先想想，然后我的答案在<a href="./what-is-duck-typing.html">这里</a>。</p>
+<h2 id="union-types-in-ceylon">Union types (in Ceylon)</h2>
+<p>除了依赖类型，还有没有其他类型系统可以表达“<code>duck</code>支持<code>swim</code><strong>或</strong><code>swim</code>”？union types能直接表达这种或关系，下面是<a href="http://ceylon-lang.org/">Ceylon</a>的实现：</p>
+<pre class="ceylon"><code>interface ICanShout {
+    shared formal void shout();
+}
+
+interface ICanSwim {
+    shared formal void swim();
+}
+
+void shoutOrSwim(ICanSwim | ICanShout duck, Boolean flag) {
+    if (flag) {
+        if (is ICanSwim duck) {
+            duck.swim();
+        }
+    } else {
+        if (is ICanShout duck) {
+            duck.shout();
+        }
+    }
+}</code></pre>
+<p>(<code>ICanSwim</code>和<code>ICanShout</code>是很逗<del>逼</del>的命名方法，我的错)</p>
+<p>这个实现的约束没依赖类型的强，但是更好理解，也容易使用；和Ruby相比，因为要先经过编译期检查，所以更安全。</p>
+<p><code>ICanSwim | ICanShout</code>是一个类型，<code>ICanSwim</code>和<code>ICanShout</code>都是它的子类。当我们知道<code>duck</code>的类型是<code>ICanSwim | ICanShout</code>时，我们怎么样使用<code>duck</code>呢？因为我们还不知道<code>duck</code>的具体类型，我们只能用<code>ICanSwim</code>和<code>ICanShout</code>共有的方法（这个例子里没有，在Ceylon可以用接口继承或其他方法来实现），这时你能做的其实是功能的交集，所以很容易和intersection type混淆，union指的是值集的并。</p>
+<p>我们也可以返回union type：</p>
+<pre class="ceylon"><code>String | Integer baka(Boolean flag) {
+    if (flag) {
+        return &quot;Cirno&quot;;
+    } else {
+        return 9;
+    }
+}</code></pre>
+<p><a href="http://hacklang.org/">Hack</a>就是用类似的方法对PHP代码进行类型检查。</p>
+<h1 id="narrowing">Narrowing</h1>
+<p>但是，我们拿到一个union type之后，我们只能使用交集里的方法，相当于失去部分的类型信息，而这些类型信息往往是有用的（我们不是实现抽象数据类型、不是要隐藏实现）。在Ceylon里我们可以用<code>is</code>语句来检查类型，看一下<code>duck</code>到底是哪个类型，然后在条件语句的分支里使用具体类型的duck。如果用Java，我们会先类型检查之后再转型：</p>
+<pre class="sourceCode java"><code class="sourceCode java">Obejct duck = ……
+<span class="kw">if</span> (duck <span class="kw">instanceof</span> ICanSwim) {
+    ICanSwim s = (ICanSwim)duck;
+    ……
+} <span class="kw">else</span> <span class="kw">if</span> (duck <span class="kw">instanceof</span> ICanShout) {
+    ICanShout s = (ICanShout)duck;
+    ……
+}</code></pre>
+<p>在Ceylon里<code>duck</code>有更准确的类型（不是简单的<code>Object</code>），而转型是自动完成，不会出现检查和转型不匹配的情况。</p>
+<h1 id="运行时类型检查">运行时类型检查</h1>
+<p>一个“足够聪明的编译器”应该能去掉一些不必要的运行时类型检查，例如可以出特化下面的代码：</p>
+<pre class="ceylon"><code>void shoutOrSwim_for_ICanSwim(ICanSwim duck, Boolean flag) {
+    if (flag) {
+            duck.swim();
+    } else {}
+}
+
+void shoutOrSwim_for_ICanShout(ICanShout duck, Boolean flag) {
+    if (flag) {
+    } else {
+            duck.shout();
+    }
+}</code></pre>
+<p>只要能在编译器知道参数的具体类型，就可以替换为特化后的代码。不过在有多个union type的参数，就可能组合爆炸。就算运行时类型检查是不可避免的，这都是安全的。这和对tagged union进行模式匹配很相似，但tagged union不可扩展，类型便签必须显式添加。</p>
+  </section>
+
+  <section id="comment">
+    <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+  </section>
+
+</article>
+
+<script type="text/javascript" src="../js/post.js"></script>
+
+
+    </div>
+    <footer id="footer">
+      @mgampkay
+    </footer>
+
+    <script type="text/javascript" src="../js/ga.js"></script>
+
+  </body>
+</html>
