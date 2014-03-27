@@ -18,7 +18,7 @@
 		var lang = elem.className.split(' ')[1];
 		var s = document.createElement('span');
 		s.classList.add("language");
-		s.innerText = lang;
+		s.textContent = lang;
 		elem.parentNode.insertBefore(s, elem);
 	    }
 	});
