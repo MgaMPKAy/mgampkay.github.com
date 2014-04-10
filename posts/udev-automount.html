@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>MgaMPKAy's udev自动挂载U盘</title>
+    <link rel="stylesheet" type="text/css" href="../css/default.css" />
+  </head>
+  <body>
+    <header id="header">
+      <div id="logo">
+        <a href="../">MgaMPKAy's Blog</a>
+      </div>
+      <nav id="navigation">
+        <a href="../">Home</a>
+        <a href="../about.html">About</a>
+        <a href="../archive.html">Archive</a>
+      </nav>
+    </header>
+
+    <div id="content">
+      <h1>udev自动挂载U盘</h1>
+
+      <article>
+  <div class="info">April 10, 2014</div>
+
+  <section id="article-content">
+    <p>以前用udev规则自动挂载U盘是很简单的，直接在规则里匹配然后执行<code>mkidr</code>和<code>mount</code>就搞定了。不过systemd在212版之后，systemd-udevd守护进程回在另一个命名空间里运行，在里面进行的<code>mount</code>是“没效”的，change log：</p>
+<pre><code>        * systemd-udevd will now run in a disassociated mount
+          namespace. To mount directories from udev rules make sure to
+          pull in mount units via SYSTEMD_WANTS properties.</code></pre>
+<p>看来要写个systemd service，然后在udev规则里用<code>SYSTEMD_WANTS</code>来执行。这就好办了，在udev规则里启动systemd service时，我们通过<code>%I</code>来传递设备路径，然后在systemd service再用一个脚本重新获得其他必要的信息然后挂载。</p>
+<p>上面是正解，下面我的折腾，因为udev规则里已经有了文件系统类型、UUID这些信息，我不想再去获取，所以直接构造一个命令，通过<code>%I</code>传过去。</p>
+<p>首先是udev规则：</p>
+<pre class="conf"><code>KERNEL!=&quot;sd[b-z]?&quot;, GOTO=&quot;automount_exit&quot;
+ACTION!=&quot;add&quot;, GOTO=&quot;automount_exit&quot;
+
+ENV{ID_FS_TYPE}==&quot;ext4&quot;,      ENV{MOUNT_OPTS}=&quot;defaults,delalloc,nodiratime,noatime,commit=300&quot;
+ENV{ID_FS_TYPE}==&quot;ext2|ext3&quot;, ENV{MOUNT_OPTS}=&quot;defaults,nodiratime,noatime,commit=350&quot;
+ENV{ID_FS_TYPE}==&quot;vfat&quot;,      ENV{MOUNT_OPTS}=&quot;defaults,utf8&quot;
+
+ACTION==&quot;add&quot;, SUBSYSTEM==&quot;block&quot;, \
+    RUN+=&quot;/usr/bin/mkdir -p /tmp/mnt/%E{ID_PART_TABLE_UUID}&quot;, \
+    ENV{SYSTEMD_WANTS}+=&quot;automount@%E{MOUNT_OPTS}\x20$root/%k\x20\x2d\x2d\x20/tmp/mnt/%E{ID_PART_TABLE_UUID}.service&quot;
+
+LABEL=&quot;automount_exit&quot;</code></pre>
+<p>automount@和.service之间就是我传递的参数。</p>
+<p>然后是服务（<code>automount@.service</code>）：</p>
+<pre class="conf"><code>[Unit]
+Description=Automount(Damn Systemd and Udev)
+
+[Service]
+Type=oneshot
+ExecStart=/bin/sh -c &quot;exec mount -o %I&quot;
+
+[Install]
+WantedBy=multi-user.target</code></pre>
+<p><code>sh -c</code>好像挺危险的，所以我只用了uuid构造命令。</p>
+<p>纯折腾啊。</p>
+  </section>
+
+  <section id="comment">
+    <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+  </section>
+
+</article>
+
+<script type="text/javascript" src="../js/post.js"></script>
+
+
+    </div>
+    <footer id="footer">
+      @mgampkay
+    </footer>
+
+    <script type="text/javascript" src="../js/ga.js"></script>
+
+  </body>
+</html>
