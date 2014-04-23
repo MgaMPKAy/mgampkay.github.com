@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>MgaMPKAy's Archlinx下静态链接Haskell程序</title>
+    <link rel="stylesheet" type="text/css" href="../css/default.css" />
+  </head>
+  <body>
+    <header id="header">
+      <div id="logo">
+        <a href="../">MgaMPKAy's Blog</a>
+      </div>
+      <nav id="navigation">
+        <a href="../">Home</a>
+        <a href="../about.html">About</a>
+        <a href="../archive.html">Archive</a>
+      </nav>
+    </header>
+
+    <div id="content">
+      <h1>Archlinx下静态链接Haskell程序</h1>
+
+      <article>
+  <div class="info">April 23, 2014</div>
+
+  <section id="article-content">
+    <p>折腾过程很漫长，失败的尝试：</p>
+<ol style="list-style-type: decimal">
+<li>用系统上的动态库生成静态库</li>
+<li>没用<code>-fPIC</code>编译glibc</li>
+<li>链接了<code>libc.a</code></li>
+</ol>
+<p>解决方法：</p>
+<ol style="list-style-type: decimal">
+<li>编译 gmp 5.0 （版本和GHC用的对应）</li>
+<li>设置<code>CFLAGS=&quot;-fPIC -O2&quot;</code>，编译glibc</li>
+<li>把编译出来的<code>*.a</code>移到喜欢的地方，其他编译产物可删除</li>
+<li>删掉<code>libc.a</code></li>
+<li>用GHC静态链接Haskell程序时用<code>-L</code>指定编译的静态库的位置</li>
+</ol>
+  </section>
+
+  <section id="comment">
+    <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+  </section>
+
+</article>
+
+<script type="text/javascript" src="../js/post.js"></script>
+
+
+    </div>
+    <footer id="footer">
+      @mgampkay
+    </footer>
+
+    <script type="text/javascript" src="../js/ga.js"></script>
+
+  </body>
+</html>
