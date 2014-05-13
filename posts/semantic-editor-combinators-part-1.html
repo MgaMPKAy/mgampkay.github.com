@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>MgaMPKAy's Semantic editor combinators (Part 1)</title>
+    <link rel="stylesheet" type="text/css" href="../css/default.css" />
+  </head>
+  <body>
+    <header id="header">
+      <div id="logo">
+        <a href="../">MgaMPKAy's Blog</a>
+      </div>
+      <nav id="navigation">
+        <a href="../">Home</a>
+        <a href="../about.html">About</a>
+        <a href="../archive.html">Archive</a>
+      </nav>
+    </header>
+
+    <div id="content">
+      <h1>Semantic editor combinators (Part 1)</h1>
+
+      <article>
+  <div class="info">May 13, 2014</div>
+
+  <section id="article-content">
+    <h1 id="result">Result</h1>
+<p>现在要修改一个一元函数的结果，可以这样实现：</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell">result edit f x <span class="fu">=</span> edit (f x)
+
+<span class="co">-- or</span>
+<span class="co">-- result edif f = edit . f</span>
+<span class="co">-- result = (.)</span></code></pre>
+<p>那么修改二元函数的最终结果呢？Haskell里的函数都被柯里化，可以看作一元函数，直接使用一次<code>result</code>看看：</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell">result2 edit f <span class="fu">=</span> result useEdit f
+  <span class="kw">where</span> useEdit <span class="fu">=</span> _</code></pre>
+<p>这里<code>f</code>是个二元函数，<code>userEdit</code>的参数应该是<code>f</code>用一个参数部分调用后得到闭包，这又是一个一元函数，如果我们用<code>result</code>修改闭包的结果，也就相当于修改原来二元函数的最终结果，所以：</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell">result2 edit f <span class="fu">=</span> result useEdit f
+  <span class="kw">where</span> useEdit closure <span class="fu">=</span> result edit closure</code></pre>
+<p>再对这个<code>result2</code>进行化简：</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell">result2 edit f <span class="fu">=</span> result useEdit f
+  <span class="kw">where</span> useEdit closure <span class="fu">=</span> result edit closure
+
+result2 edit f <span class="fu">=</span> result useEdit f
+  <span class="kw">where</span> useEdit <span class="fu">=</span> result edit
+
+result2 edit f <span class="fu">=</span> result (result edit) f
+
+result2 edit <span class="fu">=</span> result (result edit)
+
+result2 edit <span class="fu">=</span> (result <span class="fu">.</span> result) edit
+
+resul2 <span class="fu">=</span> result <span class="fu">.</span> result</code></pre>
+<p>同理，对n元函数的最后结果进行修改就是就是n个result的组合。只要<code>result</code>能修改一元函数的结果，以及下面的等价关系，就很易懂了</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell">f <span class="fu">.</span> g <span class="fu">=</span> \x <span class="ot">-&gt;</span> f (g x)</code></pre>
+<h1 id="argument">Argument</h1>
+<p>现在我们要在调用一元函数前，修改它的参数：</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">arg ::</span> (a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> (b <span class="ot">-&gt;</span> c) <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> c
+arg edit f x <span class="fu">=</span> f (edit x)
+
+<span class="co">-- or</span>
+<span class="co">-- arg edif f x = (f . edit) x</span>
+<span class="co">-- arg = flip (.)</span></code></pre>
+<p>那么修改二元函数<code>f</code>的第一个参数呢？在Haskell里函数都是一元的，所以用<code>arg</code>就可以了。更有趣的是修改二元函数的第二个参数。要改第二个参数就要先部分调用<code>f</code>得到一个闭包，然后再用<code>arg</code>修改用闭包的第一个参数，所以可以组合<code>result</code>和<code>arg</code></p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell">arg2 <span class="fu">=</span> result <span class="fu">.</span> arg</code></pre>
+<p>同理，修改n元函数的最后一个参数就是 n - 1个<code>result</code>和<code>arg</code>的组合。</p>
+<p>如果一个函数的类型是 <code>(a -&gt; b) -&gt; (b -&gt; c) -&gt; c</code>，怎样用<code>b -&gt; b</code>的函数修改第一个参数的结果？</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell">resultOfArg <span class="fu">=</span> arg <span class="fu">.</span> result</code></pre>
+<p>嗯，规律超明显。</p>
+  </section>
+
+  <section id="comment">
+    <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+  </section>
+
+</article>
+
+<script type="text/javascript" src="../js/post.js"></script>
+
+
+    </div>
+    <footer id="footer">
+      @mgampkay
+    </footer>
+
+    <script type="text/javascript" src="../js/ga.js"></script>
+
+  </body>
+</html>
