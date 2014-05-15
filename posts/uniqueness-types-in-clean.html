@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>MgaMPKAy's Clean语言: Uniqueness Typing</title>
+    <link rel="stylesheet" type="text/css" href="../css/default.css" />
+  </head>
+  <body>
+    <header id="header">
+      <div id="logo">
+        <a href="../">MgaMPKAy's Blog</a>
+      </div>
+      <nav id="navigation">
+        <a href="../">Home</a>
+        <a href="../about.html">About</a>
+        <a href="../archive.html">Archive</a>
+      </nav>
+    </header>
+
+    <div id="content">
+      <h1>Clean语言: Uniqueness Typing</h1>
+
+      <article>
+  <div class="info">May 15, 2014</div>
+
+  <section id="article-content">
+    <p>今年寒假看了一下<a href="http://wiki.clean.cs.ru.nl/Clean">Clean语言</a>，给我留下的印象：难用，不过它也有一些有趣的特性，例如uniqueness typing和对泛型编程的支持（当然还有其他我不太感兴趣的），这篇主要记录一下uniqueness typing。</p>
+<h1 id="纯函数式编程语言里的io">纯函数式编程语言里的IO</h1>
+<p>这里，“纯”当然是指Haskell推崇的纯，怎样在一个纯函数式语言里表达IO操作呢？Haskell的答案是IO Monad，而Clean的答案是uniqueness typing。</p>
+<p>假设我们的语言里有一个函数<code>getLine</code>从stdin获取输入，<code>getLine</code>的每次调用会有副作用，可以返回不同的值，要怎样用纯函数来表达<code>getLine</code>呢？一个想法就是让<code>getLine</code>接受外部状态作为参数，返回一个新的状态和输入的字符串，<code>getLine</code>的类型就可以表示成<code>World -&gt; (String, World)</code>，我们可以这样读入两行：</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell">getTwoLine world0 <span class="fu">=</span>
+    <span class="kw">let</span> (line1, world1) <span class="fu">=</span> <span class="fu">getLine</span> world0
+        (line2, world2) <span class="fu">=</span> <span class="fu">getLine</span> world1
+    <span class="kw">in</span> ((line1, line2), world2)</code></pre>
+<p>可以发现，其实我们是通过不断传递新的<code>World</code>参数来能表达语句间的数据依赖，从而让运行时按顺序执行语句。但是这里有一个问题，我们可能传递错了或重复传递：</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell">badTwoLine world0 <span class="fu">=</span>
+    <span class="kw">let</span> (line1, world1) <span class="fu">=</span> <span class="fu">getLine</span> world0
+        (line2, world2) <span class="fu">=</span> <span class="fu">getLine</span> world0  <span class="co">-- use world0 second time</span>
+    <span class="kw">in</span> ((line1, line2), world2)</code></pre>
+<p>为了解决这个问题，IO Monad会隐式传递<code>World</code>，而uniqueness typing会禁止一个<code>World</code>被重复使用（准确说法是不会被共享）。</p>
+<h1 id="uniqueness-typing">Uniqueness typing</h1>
+<p>在Clean的类型系统里，一个值除了有类型外，还会有一个唯一性属性（uniqueness attribute）。如果一个值是唯一的（用<code>*</code>表示），它就不能被多次使用，一个函数使用完一个唯一值之后，返回值中也必须有一个新的唯一值，然后继续被传递。一些函数既能作用在唯一值，又能作用在非唯一值上，这时就能用匿名属性（<code>.</code>）或者属性变量（就像类型变量一样）来表示。</p>
+<p>例如上面的<code>badTwoLine</code>函数，<code>world0</code>被使用了两次，Clean编译器能发现这个错误，说<code>world0</code>需要的唯一性不能被满足。</p>
+<p>除此之外，还有不少细节问题，例如数据结构里元素的唯一性会向外传播，属性间有子类型关系，闭包的唯一性得等，整个属性系统变得很复杂，还好编译器能推导大部分的属性，化简了不少工作。</p>
+<h1 id="惰性求值">惰性求值</h1>
+<p>Clean程序会从<code>Start :: *World -&gt; *World</code>函数开始执行，运行时系统会向<code>Start</code>传进一个唯一的<code>World</code>（实际上只是个数字），从这个唯一的<code>World</code>我们可以生成新的<code>World</code>或其他唯一值，通过这些唯一值就能执行IO和控制程序执行的顺序，甚至可以原地修改数据，对性能优化也有帮助。</p>
+<p>Clean的执行是基于图规约的惰性求值，整个程序就是一个图，这个图就是维一值传递的网络，开始于<code>*World</code>结束于<code>*World</code>，只有对最后的<code>*World</code>的求值有意义的路径才会被执行，其他都被忽略。例如下面的程序</p>
+<pre class="clean"><code>Start world0 = world2
+  where
+    (_, file0, world1) = fopen &quot;file&quot; FReadText world0
+    (_, char,  file1)  = freadc file0
+    (_, world3)        = fclose file1 world1
+
+// fopen  :: !{#Char} !Int !*f -&gt; (!Bool,!*File,!*f)
+// freadc :: !*File -&gt; (!Bool,!Char,!*File)
+// fclose :: !*File !*f -&gt; (!Bool,!*f)</code></pre>
+<p>where部分按顺序读下来，</p>
+<ol style="list-style-type: decimal">
+<li><code>fopen</code>用<code>world0</code>打开文件，返回<code>world1</code>和<code>file0 :: *File</code></li>
+<li><code>freadc</code>从<code>file0</code>里读一个字符，返回<code>file1</code></li>
+<li><code>fclose</code>用<code>world1</code>关闭<code>file1</code>，返回<code>world2</code></li>
+</ol>
+<p>但是，实际是2和3是不被执行的，因为<code>Start</code>返回的是<code>world1</code>，而<code>world1</code>的求值在第1步就完成了。为了让<code>freadc</code>和<code>fclose</code>被执行，<code>Start</code>必须返回一个依赖于<code>freadc</code>和<code>fclose</code>的<code>*World</code>，在这里就是<code>world2</code>。</p>
+<p>这也是Clean程序的模式，从一个<code>*World</code>生成更多唯一值，最后回到<code>*World</code>。</p>
+  </section>
+
+  <section id="comment">
+    <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+  </section>
+
+</article>
+
+<script type="text/javascript" src="../js/post.js"></script>
+
+
+    </div>
+    <footer id="footer">
+      @mgampkay
+    </footer>
+
+    <script type="text/javascript" src="../js/ga.js"></script>
+
+  </body>
+</html>
