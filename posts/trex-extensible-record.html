@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>MgaMPKAy's Trex: 可扩展记录</title>
+    <link rel="stylesheet" type="text/css" href="../css/default.css" />
+  </head>
+  <body>
+    <header id="header">
+      <div id="logo">
+        <a href="../">MgaMPKAy's Blog</a>
+      </div>
+      <nav id="navigation">
+        <a href="../">Home</a>
+        <a href="../about.html">About</a>
+        <a href="../archive.html">Archive</a>
+      </nav>
+    </header>
+
+    <div id="content">
+      <h1>Trex: 可扩展记录</h1>
+
+      <article>
+  <div class="info">May 17, 2014</div>
+
+  <section id="article-content">
+    <h1 id="trex简介">Trex简介</h1>
+<p>Haskell的记录类型是不可扩展的，而一个可扩展的记录类型能添加、删除字段，是一种结构化类型。Trex是一个在Hugs里实现的扩展<sup><a href="#fn1" class="footnoteRef" id="fnref1">1</a></sup>，为Haskell添加了可扩展记录类型（后面的记录都是指可扩展记录）。</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">import</span> Hugs.Trex
+
+<span class="ot">p1 ::</span> <span class="dt">Rec</span> (<span class="ot">x ::</span> <span class="dt">Int</span>,<span class="ot"> y ::</span> <span class="dt">Int</span>)
+p1 <span class="fu">=</span> (x <span class="fu">=</span> <span class="dv">1</span>, y <span class="fu">=</span> <span class="dv">2</span>)
+
+<span class="ot">p2 ::</span> <span class="dt">Rec</span> (<span class="ot">x ::</span> <span class="dt">Int</span>,<span class="ot"> y ::</span> <span class="dt">Int</span>,<span class="ot"> z ::</span> <span class="dt">Int</span>)
+p2 <span class="fu">=</span> (x <span class="fu">=</span> <span class="dv">1</span>, y <span class="fu">=</span> <span class="dv">2</span>, z <span class="fu">=</span> <span class="dv">9</span>)</code></pre>
+<p><code>p1</code>和<code>p2</code>是两个记录，它们都有<code>x</code>和<code>y</code>字段，而且<code>p2</code>还有<code>z</code>字段。记录的类型的格式是<code>Rec ([字段名::类型])</code>。因为记录是一种结构化类型，我们可以定义只使用到部分字段的函数：</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">addPoint2D ::</span> (r1\x, r1\y, r2\x, r2\y)
+           <span class="ot">=&gt;</span> <span class="dt">Rec</span> (<span class="ot">x ::</span> <span class="dt">Int</span>,<span class="ot"> y ::</span> <span class="dt">Int</span> <span class="fu">|</span> r1)
+           <span class="ot">-&gt;</span> <span class="dt">Rec</span> (<span class="ot">x ::</span> <span class="dt">Int</span>,<span class="ot"> y::</span> <span class="dt">Int</span> <span class="fu">|</span> r2)
+           <span class="ot">-&gt;</span> <span class="dt">Rec</span> (<span class="ot">x ::</span> <span class="dt">Int</span>,<span class="ot"> y ::</span> <span class="dt">Int</span>)
+addPoint2D p1 p2 <span class="fu">=</span> (x <span class="fu">=</span> <span class="fu">#</span>x p1 <span class="fu">+</span> <span class="fu">#</span>x p2, y <span class="fu">=</span> <span class="fu">#</span>y p1 <span class="fu">+#</span>ｙp2)
+
+p3 <span class="fu">=</span> p1 <span class="ot">`addPoint2D`</span> p2</code></pre>
+<p><code>addPoint2D</code>的看起来很复杂，但是它能被推导出来，而且很容易理解。首先<code>r1\x</code>表示<code>r1</code>是个记录且里面没有<code>x</code>字段，<code>Rec (x :: Int, y :: Int | r1)</code>表示在<code>r1</code>的基础上加上<code>x</code>和<code>y</code>字段。所以<code>addPoint2D</code>的类型意思是：两个参数都至少有<code>x</code>和<code>y</code>字段，返回一个只有<code>x</code>和<code>y</code>字段的记录。<sup><a href="#fn2" class="footnoteRef" id="fnref2">2</a></sup></p>
+<p>还可以增加、删除字段、改变字段类型：</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">addZ ::</span> r\z <span class="ot">=&gt;</span> <span class="dt">Rec</span> a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> <span class="dt">Rec</span> (<span class="ot">z ::</span> b <span class="fu">|</span> r)
+addZ p v <span class="fu">=</span> (z <span class="fu">=</span> v <span class="fu">|</span> p)
+
+<span class="ot">removeZ ::</span> r\z <span class="ot">=&gt;</span> <span class="dt">Rec</span> (<span class="ot">z ::</span> b <span class="fu">|</span> r) <span class="ot">-&gt;</span> <span class="dt">Rec</span> r
+removeZ (z <span class="fu">=</span> _ <span class="fu">|</span> p) <span class="fu">=</span> p
+
+<span class="ot">toStringPoint ::</span> (r\x, r\y, <span class="kw">Show</span> a)
+              <span class="ot">=&gt;</span> <span class="dt">Rec</span> (<span class="ot">x ::</span> a,<span class="ot"> y ::</span> a <span class="fu">|</span> r)
+              <span class="ot">-&gt;</span> <span class="dt">Rec</span> (<span class="ot">x ::</span> <span class="dt">String</span>,<span class="ot"> y ::</span> <span class="dt">String</span> <span class="fu">|</span> r)
+toStringPoint (x <span class="fu">=</span> x, y <span class="fu">=</span> y <span class="fu">|</span> r) <span class="fu">=</span> (x <span class="fu">=</span> <span class="fu">show</span> x, y <span class="fu">=</span> <span class="fu">show</span> y <span class="fu">|</span> r)</code></pre>
+<div class="footnotes">
+<hr />
+<ol>
+<li id="fn1"><p>GHC没实现Trex，不过有各种库作为替代：<a href="http://www.haskell.org/haskellwiki/Extensible_record">Extensible record</a><a href="#fnref1">↩</a></p></li>
+<li id="fn2"><p>这跟Row polymorphism里的表示方法几乎是直接对应的<a href="#fnref2">↩</a></p></li>
+</ol>
+</div>
+  </section>
+
+  <section id="comment">
+    <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+  </section>
+
+</article>
+
+<script type="text/javascript" src="../js/post.js"></script>
+
+
+    </div>
+    <footer id="footer">
+      @mgampkay
+    </footer>
+
+    <script type="text/javascript" src="../js/ga.js"></script>
+
+  </body>
+</html>
