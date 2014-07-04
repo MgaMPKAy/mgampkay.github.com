@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>MgaMPKAy's 用SMT求解器解数独</title>
+    <link rel="stylesheet" type="text/css" href="../css/default.css" />
+  </head>
+  <body>
+    <header id="header">
+      <div id="logo">
+        <a href="../">MgaMPKAy's Blog</a>
+      </div>
+      <nav id="navigation">
+        <a href="../">Home</a>
+        <a href="../about.html">About</a>
+        <a href="../archive.html">Archive</a>
+      </nav>
+    </header>
+
+    <div id="content">
+      <h1>用SMT求解器解数独</h1>
+
+      <article>
+  <div class="info">July  4, 2014</div>
+
+  <section id="article-content">
+    <p>高中的时候才知道数独，还买了本小册子，至今没填完。</p>
+<p>用SMT求解器解数独简直大才小用，而且不用费一点脑力就能用SMT来描述一个数独问题。数独里的每一个格子可以直接对应到SMT里的一个变量，然后根据数独的规则向这些变量加上约束。对于已知的格子，直接让对应变量等于那个值。</p>
+<p><a href="https://gist.github.com/MgaMPKAy/10925318">完整代码在这</a></p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell">sudoku game <span class="fu">=</span> <span class="kw">do</span>
+    <span class="co">-- 81个变量</span>
+<span class="ot">    vs ::</span> [<span class="dt">SWord8</span>] <span class="ot">&lt;-</span> mkExistVars <span class="dv">81</span>
+    <span class="co">-- 已知的值</span>
+    zipWithM_ setVar game vs
+    <span class="co">-- 每个变量  1 &lt;= x &lt;= ⑨</span>
+    <span class="fu">mapM_</span> (\x <span class="ot">-&gt;</span> constrain <span class="fu">$</span> x <span class="fu">.&gt;=</span> <span class="dv">1</span> <span class="fu">&amp;&amp;&amp;</span> x <span class="fu">.&lt;=</span> <span class="dv">9</span>) vs
+    <span class="co">-- 行/列/九个小方格。这一团地图是神马？(╯°口°)╯(┴—┴)</span>
+    <span class="fu">mapM_</span> (<span class="fu">mapM_</span> (allDiff <span class="fu">.</span> <span class="fu">map</span> (vs <span class="fu">!!</span>)))
+        [ <span class="fu">map</span> (<span class="fu">take</span> <span class="dv">9</span> <span class="fu">.</span> <span class="fu">iterate</span> (<span class="fu">+</span> <span class="dv">9</span>)) [<span class="dv">0</span> <span class="fu">..</span> <span class="dv">8</span>]
+        , <span class="fu">map</span> (<span class="fu">take</span> <span class="dv">9</span> <span class="fu">.</span> <span class="fu">iterate</span> (<span class="fu">+</span> <span class="dv">1</span>)) (<span class="fu">take</span> <span class="dv">9</span> [<span class="dv">0</span>, <span class="dv">9</span> <span class="fu">..</span>])
+        , <span class="fu">map</span> (<span class="fu">concat</span> <span class="fu">.</span> <span class="fu">take</span> <span class="dv">3</span> <span class="fu">.</span> <span class="fu">iterate</span> (<span class="fu">map</span> (<span class="fu">+</span> <span class="dv">9</span>)) <span class="fu">.</span> <span class="fu">take</span> <span class="dv">3</span> <span class="fu">.</span> <span class="fu">iterate</span> (<span class="fu">+</span> <span class="dv">1</span>))
+            [<span class="dv">0</span>,<span class="dv">3</span>,<span class="dv">6</span>,<span class="dv">27</span>,<span class="dv">30</span>,<span class="dv">33</span>,<span class="dv">54</span>,<span class="dv">57</span>,<span class="dv">60</span>]
+        ]
+    <span class="co">-- 也不知道是谁规定的，最后都要返回一个SB的true ╮(￣▽￣)╭</span>
+    <span class="fu">return</span> (<span class="ot">true ::</span> <span class="dt">SBool</span>)
+
+  <span class="kw">where</span>
+    setVar <span class="dv">0</span> _ <span class="fu">=</span> <span class="fu">return</span> ()
+    setVar x v <span class="fu">=</span> constrain <span class="fu">$</span> v <span class="fu">.==</span> <span class="fu">fromIntegral</span> x
+
+    allDiff [] <span class="fu">=</span> <span class="fu">return</span> ()
+    allDiff (x<span class="fu">:</span>xs) <span class="fu">=</span> <span class="fu">mapM_</span> (constrain <span class="fu">.</span> (x <span class="fu">./=</span>)) xs <span class="fu">&gt;&gt;</span> allDiff xs</code></pre>
+<p>要用1秒左右才能解出来传说中<a href="http://www.telegraph.co.uk/science/science-news/9359579/Worlds-hardest-sudoku-can-you-crack-it.html">最难的数独</a>，不过不伤脑能有这个数度也算不错了。</p>
+<p>这种约束简单而且能直接和SMT变量对应的问题都很好解。</p>
+<p>其实更有趣的是生成数独问题。</p>
+  </section>
+
+  <section id="comment">
+    <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+  </section>
+
+</article>
+
+<script type="text/javascript" src="../js/post.js"></script>
+
+
+    </div>
+    <footer id="footer">
+      @mgampkay
+    </footer>
+
+    <script type="text/javascript" src="../js/ga.js"></script>
+
+  </body>
+</html>
