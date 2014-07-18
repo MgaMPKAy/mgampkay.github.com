@@ -51,7 +51,7 @@
 
     allDiff [] <span class="fu">=</span> <span class="fu">return</span> ()
     allDiff (x<span class="fu">:</span>xs) <span class="fu">=</span> <span class="fu">mapM_</span> (constrain <span class="fu">.</span> (x <span class="fu">./=</span>)) xs <span class="fu">&gt;&gt;</span> allDiff xs</code></pre>
-<p>要用1秒左右才能解出来传说中<a href="http://www.telegraph.co.uk/science/science-news/9359579/Worlds-hardest-sudoku-can-you-crack-it.html">最难的数独</a>，不过不伤脑能有这个数度也算不错了。</p>
+<p>要用1秒左右才能解出来传说中<a href="http://www.telegraph.co.uk/science/science-news/9359579/Worlds-hardest-sudoku-can-you-crack-it.html">最难的数独</a>，不过不伤脑能有这个速度也算不错了。</p>
 <p>这种约束简单而且能直接和SMT变量对应的问题都很好解。</p>
 <p>其实更有趣的是生成数独问题。</p>
   </section>
