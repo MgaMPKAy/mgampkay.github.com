@@ -42,7 +42,7 @@ p2 <span class="fu">=</span> (x <span class="fu">=</span> <span class="dv">1</sp
 addPoint2D p1 p2 <span class="fu">=</span> (x <span class="fu">=</span> <span class="fu">#</span>x p1 <span class="fu">+</span> <span class="fu">#</span>x p2, y <span class="fu">=</span> <span class="fu">#</span>y p1 <span class="fu">+#</span>ｙp2)
 
 p3 <span class="fu">=</span> p1 <span class="ot">`addPoint2D`</span> p2</code></pre>
-<p><code>addPoint2D</code>的看起来很复杂，但是它能被推导出来，而且很容易理解。首先<code>r1\x</code>表示<code>r1</code>是个记录且里面没有<code>x</code>字段，<code>Rec (x :: Int, y :: Int | r1)</code>表示在<code>r1</code>的基础上加上<code>x</code>和<code>y</code>字段。所以<code>addPoint2D</code>的类型意思是：两个参数都至少有<code>x</code>和<code>y</code>字段，返回一个只有<code>x</code>和<code>y</code>字段的记录。<sup><a href="#fn2" class="footnoteRef" id="fnref2">2</a></sup></p>
+<p><code>addPoint2D</code>的类型看起来很复杂，但是它能被推导出来，而且很容易理解。首先<code>r1\x</code>表示<code>r1</code>是个记录且里面没有<code>x</code>字段，<code>Rec (x :: Int, y :: Int | r1)</code>表示在<code>r1</code>的基础上加上<code>x</code>和<code>y</code>字段。所以<code>addPoint2D</code>的类型意思是：两个参数都至少有<code>x</code>和<code>y</code>字段，返回一个只有<code>x</code>和<code>y</code>字段的记录。<sup><a href="#fn2" class="footnoteRef" id="fnref2">2</a></sup></p>
 <p>还可以增加、删除字段、改变字段类型：</p>
 <pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">addZ ::</span> r\z <span class="ot">=&gt;</span> <span class="dt">Rec</span> a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> <span class="dt">Rec</span> (<span class="ot">z ::</span> b <span class="fu">|</span> r)
 addZ p v <span class="fu">=</span> (z <span class="fu">=</span> v <span class="fu">|</span> p)

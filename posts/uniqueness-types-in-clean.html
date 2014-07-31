@@ -36,7 +36,7 @@
 <p>可以发现，其实我们是通过不断传递新的<code>World</code>参数来能表达语句间的数据依赖，从而让运行时按顺序执行语句。但是这里有一个问题，我们可能传递错了或重复传递：</p>
 <pre class="sourceCode haskell"><code class="sourceCode haskell">badTwoLine world0 <span class="fu">=</span>
     <span class="kw">let</span> (line1, world1) <span class="fu">=</span> <span class="fu">getLine</span> world0
-        (line2, world2) <span class="fu">=</span> <span class="fu">getLine</span> world0  <span class="co">-- use world0 second time</span>
+        (line2, world2) <span class="fu">=</span> <span class="fu">getLine</span> world0  <span class="co">-- use world0 the second time</span>
     <span class="kw">in</span> ((line1, line2), world2)</code></pre>
 <p>为了解决这个问题，IO Monad会隐式传递<code>World</code>，而uniqueness typing会禁止一个<code>World</code>被重复使用（准确说法是不会被共享）。</p>
 <h1 id="uniqueness-typing">Uniqueness typing</h1>

@@ -53,9 +53,9 @@ void shoutOrSwim(ICanSwim | ICanShout duck, Boolean flag) {
         }
     }
 }</code></pre>
-<p>(<code>ICanXXX</code>是很逗<del>逼</del>的命名方法，我的错)</p>
+<p>(<code>ICanXXX</code>是很逗<del>逼</del>的命名方法)</p>
 <p>这个实现的约束没依赖类型的强，但是更好理解，也容易使用；和Ruby相比，因为要先经过编译期检查，所以更安全。</p>
-<p><code>ICanSwim | ICanShout</code>是一个类型，<code>ICanSwim</code>和<code>ICanShout</code>都是它的子类。当我们知道<code>duck</code>的类型是<code>ICanSwim | ICanShout</code>时，我们怎么样使用<code>duck</code>呢？因为我们还不知道<code>duck</code>的具体类型，我们只能用<code>ICanSwim</code>和<code>ICanShout</code>共有的方法（在Ceylon里就是公共父类里的方法），这时你能做的其实是功能的交集，所以很容易和intersection type混淆，union指的是值集的并。</p>
+<p><code>ICanSwim | ICanShout</code>是一个类型，<code>ICanSwim</code>和<code>ICanShout</code>都是它的子类。当我们知道<code>duck</code>的类型是<code>ICanSwim | ICanShout</code>时，我们怎么样使用<code>duck</code>呢？因为我们还不知道<code>duck</code>的具体类型，我们只能用<code>ICanSwim</code>和<code>ICanShout</code>共有的方法（在Ceylon里就是公共父类里的方法），这时你能做的其实是功能的交集，所以很容易和intersection type混淆，union指的是<strong>值集的并</strong>。</p>
 <p>我们也可以返回union type：</p>
 <pre class="ceylon"><code>String | Integer baka(Boolean flag) {
     if (flag) {
@@ -90,7 +90,7 @@ void shoutOrSwim_for_ICanShout(ICanShout duck, Boolean flag) {
             duck.shout();
     }
 }</code></pre>
-<p>只要能在编译器知道参数的具体类型，就可以替换为特化后的代码。不过在有多个union type的参数，就可能组合爆炸。就算运行时类型检查是不可避免的，这都是安全的。这和对tagged union进行模式匹配很相似，但tagged union不可扩展，类型标签必须显式添加。</p>
+<p>只要能在编译器知道参数的具体类型，就可以替换为特化后的代码。不过在有多个union type的参数，就可能组合爆炸。就算运行时类型检查是不可避免的，这都是安全的。这和对tagged union进行模式匹配很相似（tagged union也能被看作是运行时类型检查），但tagged union不可扩展，类型标签必须显式添加。</p>
   </section>
 
   <section id="comment">

@@ -25,8 +25,9 @@
   <div class="info">December 19, 2013</div>
 
   <section id="article-content">
-    <p>简单地统计了最近三个多月过我常用的命令<sup><a href="#fn1" class="footnoteRef" id="fnref1">1</a></sup>。</p>
+    <p>简单地统计了最近三个多月过我常用的命令，这里的命令是指自己输入的而且被记录到历史文件的命令，alias不展开。</p>
 <h1 id="结果">结果</h1>
+<p>（用Google的API画的图，所以你懂的）</p>
 <div id="hour_chart" style="width: 600px; height: 220px;"></div>
 
 <div id="weekdate_chart" style="width: 600px; height: 220px;"></div>
@@ -38,7 +39,7 @@
 <p><code>ls</code>用的比想像中多，要想办法降下去。</p>
 <h1 id="实现">实现</h1>
 <p><a href="https://gist.github.com/MgaMPKAy/8036738">Gist</a></p>
-<p>为了找出历史记录里用过的全部命令，一个完整的Shell脚本解析器是必须的，所以我用了<a href="https://github.com/MgaMPKAy/language-sh">language-sh</a><sup><a href="#fn2" class="footnoteRef" id="fnref2">2</a></sup>，试了一些脚本，基本满足要求。经过解析之后就得到一棵抽象语法树（类型是<code>Command</code>），其中的<code>Statement</code>节点上的第一子节点就是我想要的命令名<sup><a href="#fn3" class="footnoteRef" id="fnref3">3</a></sup>：</p>
+<p>为了找出历史记录里用过的全部命令，一个完整的Shell脚本解析器是必须的，所以我用了<a href="https://github.com/MgaMPKAy/language-sh">language-sh</a>（是我稍微修改过的版本，修改了一些类型错误，为AST节点派生<code>Data</code>和<code>Typeable</code>），试了一些脚本，基本满足要求。经过解析之后就得到一棵抽象语法树（类型是<code>Command</code>），其中的<code>Statement</code>节点上的第一子节点就是我想要的命令名（贪方便，返回列表而不是<code>Maybe String</code>）：</p>
 <pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">getCommand ::</span> <span class="dt">Statement</span> <span class="ot">-&gt;</span> [<span class="dt">String</span>]
 getCommand (<span class="dt">Statement</span> (x<span class="fu">:</span>_) _ _) <span class="fu">=</span> [pretty x]
 getCommand _ <span class="fu">=</span> []</code></pre>
@@ -124,14 +125,6 @@ collectCommand <span class="fu">=</span> everything (<span class="fu">++</span>)
 </script>
 
 
-<div class="footnotes">
-<hr />
-<ol>
-<li id="fn1"><p>指自己输入的而且被记录到历史文件的命令，alias不展开<a href="#fnref1">↩</a></p></li>
-<li id="fn2"><p>是我稍微修改过的版本，修改了一些类型错误，为AST节点派生<code>Data</code>和<code>Typeable</code><a href="#fnref2">↩</a></p></li>
-<li id="fn3"><p>贪方便，返回列表而不是<code>Maybe String</code><a href="#fnref3">↩</a></p></li>
-</ol>
-</div>
   </section>
 
   <section id="comment">

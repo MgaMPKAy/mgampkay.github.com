@@ -58,7 +58,7 @@
 <span class="kw">class</span> <span class="dt">Typeable2</span> (<span class="ot">t ::</span> <span class="fu">*</span> <span class="ot">-&gt;</span> <span class="fu">*</span> <span class="ot">-&gt;</span> <span class="fu">*</span>) <span class="kw">where</span>
 <span class="ot">    typeOf2 ::</span> t a b <span class="ot">-&gt;</span> <span class="dt">TypeRep</span></code></pre>
 <p><code>Typeable</code>的作用是为每一个类型（kind为<code>*</code>）定义一个<code>TypeRep</code>，用做运行时的类型信息。类似的，<code>Typeable1</code>和<code>Typeable2</code>的实例可以为kind为<code>* -&gt; *</code>和 <code>* -&gt; * -&gt; *</code>的类型构造子提供类型信息。<code>typeOfN</code>的第一个参数都是没用的，因为我们只需要类型信息，不需要值。</p>
-<p>要定义这么多（一直到7）相似的type class的原因是没有多态的kind，每一个type class需要的kind都是固定的。如果能像参数化多态一样，有个kind参数来表示kind多态就好了，于是就有了 <code>PolyKinds</code>扩展。</p>
+<p>要定义这么多（实际上是一直到7）相似的type class的原因是没有多态的kind，每一个type class需要的kind都是固定的。如果能像参数化多态一样，有个kind参数来表示kind多态就好了，于是就有了 <code>PolyKinds</code>扩展。</p>
 <p>有了多态的kind之后，Typeable就可以这样定义：</p>
 <pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">{-# LANGUAGE PolyKinds #-}</span>           <span class="co">-- for Proxy, Typeable</span>
 <span class="ot">{-# LANGUAGE ScopedTypeVariables #-}</span> <span class="co">-- for typeOf, typeOf1 ...</span>
@@ -77,7 +77,7 @@ typeOf1 _ <span class="fu">=</span> typeRep (<span class="dt">Proxy</span><span 
 <p>直接这样定义是不行的：</p>
 <pre><code>class Typeable (t :: k) where
     typeRep :: t -&gt; String</code></pre>
-<p>因为<code>typeRep</code>是个函数，函数参数的类型的king必须是<code>*</code>，那么<code>t</code>的kind就固定成<code>*</code>了，和手写的<code>k</code>是矛盾的，所以通过一个<code>Proxy :: k -&gt; *</code>，我们就能让<code>typeRep :: Proxy t -&gt; String</code>的参数的kind为<code>*</code>，而<code>t</code>的kind是任意的。</p>
+<p>因为<code>typeRep</code>是个函数，函数参数的是值，值的类型的kind必须是<code>*</code>，那么<code>t</code>的kind就固定成<code>*</code>了，和手写的<code>k</code>是矛盾的，所以通过一个<code>Proxy :: k -&gt; *</code>，我们就能让<code>typeRep :: Proxy t -&gt; String</code>的参数的类型的kind为<code>*</code>，而<code>t</code>的kind是任意的。</p>
 <h1 id="constraint-kinds">Constraint Kinds</h1>
 <p>在上一节，<code>Typeable</code>的kind是<code>k -&gt; Constraint</code>，Constraint是一个特殊的kind，用来表示约束。所谓约束基本上就是函数签名里写在<code>=&gt;</code>前的东西，这是很好理解的：</p>
 <pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">(==) ::</span> <span class="kw">Eq</span> a <span class="ot">=&gt;</span> a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Bool</span>   <span class="co">--  约束：a必须是Eq的实例</span>

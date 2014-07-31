@@ -51,10 +51,7 @@ Description=Automount(Damn Systemd and Udev)
 
 [Service]
 Type=oneshot
-ExecStart=/bin/sh -c &quot;exec mount -o %I&quot;
-
-[Install]
-WantedBy=multi-user.target</code></pre>
+ExecStart=/bin/sh -c &quot;exec mount -o %I&quot;</code></pre>
 <p><code>sh -c</code>好像挺危险的，所以我只用了uuid构造命令。</p>
 <p>纯折腾啊。</p>
   </section>
