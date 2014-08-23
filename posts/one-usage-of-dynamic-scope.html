@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>MgaMPKAy's 动态作用域用处一例</title>
+    <link rel="stylesheet" type="text/css" href="../css/default.css" />
+  </head>
+  <body>
+    <header id="header">
+      <div id="logo">
+        <a href="../">MgaMPKAy's Blog</a>
+      </div>
+      <nav id="navigation">
+        <a href="../">Home</a>
+        <a href="../about.html">About</a>
+        <a href="../archive.html">Archive</a>
+      </nav>
+    </header>
+
+    <div id="content">
+      <h1>动态作用域用处一例</h1>
+
+      <article>
+  <div class="info">August 22, 2014</div>
+
+  <section id="article-content">
+    <p>现在流行的是静态/词法作用域，现在新生的编程语言，只要不是玩具，那多半不会默认用动态作用域（<del>因为静态的总比动态好</del>）。</p>
+<p>我用<code>enh-ruby-mode</code>写ruby代码，<code>enh-ruby-mode</code>有一个功能是自动在文件开头加上encoding文件头，不过我们都用ruby 2.1了，就没必要加了，所以我想把它关掉。我看了一下代码，果然是通过<code>before-save-hook</code>实现的，不过<code>enh-ruby-mode</code>没有提供关闭的选项，而那时候我又不知道<code>remove-hook</code>的存在。不过我知道elisp是动态作用域的，所以应该可以通过再定义一个同名的函数，“覆盖”原来的函数：</p>
+<pre class="elisp"><code>(add-hook 'enh-ruby-mode-hook
+      (lambda ()
+        (defun enh-ruby-mode-set-encoding())))</code></pre>
+<p>太邪恶了，所以后来我还是用<code>remove-hook</code>了。</p>
+<p>我想能不能同过良好的设计来完全替代动态作用域呢？例如<a href="https://www.gnu.org/software/emacs/emacs-paper.html#SEC17">EMACS: The Extensible, Customizable Display Editor</a>里的例子。</p>
+  </section>
+
+  <section id="comment">
+    <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+  </section>
+
+</article>
+
+<script type="text/javascript" src="../js/post.js"></script>
+
+
+    </div>
+    <footer id="footer">
+      @mgampkay
+    </footer>
+
+    <script type="text/javascript" src="../js/ga.js"></script>
+
+  </body>
+</html>
