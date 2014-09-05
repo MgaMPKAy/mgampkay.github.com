@@ -53,7 +53,7 @@ info = <span class="dv">nil</span>
 <span class="kw">rescue</span>
 <span class="kw">end</span></code></pre>
 <p>折腾我了一个下午。</p>
-<p>后来用<code>[1..-1]</code>来取ActiveRecord结果集中第二到最后的元素，居然出现StackOverlow，再试发现只要取下标都会出错，感觉不妙，一定是某个库导入了奇怪的东西。然后一个一个gem关掉，才定位到nlpir， 打开其中主要的一个文件， 开头是这样的：</p>
+<p>后来用<code>[1..-1]</code>来取ActiveRecord结果集中第二到最后的元素，居然出现StackOverflow，再试发现只要取下标都会出错，感觉不妙，一定是某个库导入了奇怪的东西。然后一个一个gem关掉，才定位到nlpir， 打开其中主要的一个文件， 开头是这样的：</p>
 <pre class="sourceCode ruby"><code class="sourceCode ruby"><span class="co"># coding: utf-8</span>
 ...
 <span class="kw">include</span> <span class="dt">Fiddle</span>::<span class="dt">CParser</span>
@@ -62,7 +62,8 @@ info = <span class="dv">nil</span>
 <span class="kw">module</span> <span class="dt">Nlpir</span>
   ...
 <span class="kw">end</span></code></pre>
-<p>直接在顶层<code>include Fiddle::Importer</code>， Fiddle::Importer刚好又<a href="http://ruby-doc.org/stdlib-2.0.0/libdoc/fiddle/rdoc/Fiddle/Importer.html#method-i-5B-5D">定义了<code>[]</code></a>……</p>
+<p>直接在顶层<code>include Fiddle::Importer</code>， <code>Fiddle::Importer</code>刚好又<a href="http://ruby-doc.org/stdlib-2.0.0/libdoc/fiddle/rdoc/Fiddle/Importer.html#method-i-5B-5D">定义了<code>[]</code></a>……</p>
+<p>Mixin用错了就和动态作用域一样坑。</p>
   </section>
 
   <section id="comment">
