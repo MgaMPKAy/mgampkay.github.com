@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>MgaMPKAy's 微妙的坑 - 1</title>
+    <link rel="stylesheet" type="text/css" href="../css/default.css" />
+  </head>
+  <body>
+    <header id="header">
+      <div id="logo">
+        <a href="../">MgaMPKAy's Blog</a>
+      </div>
+      <nav id="navigation">
+        <a href="../">Home</a>
+        <a href="../about.html">About</a>
+        <a href="../archive.html">Archive</a>
+      </nav>
+    </header>
+
+    <div id="content">
+      <h1>微妙的坑 - 1</h1>
+
+      <article>
+  <div class="info">September  2, 2014</div>
+
+  <section id="article-content">
+    <p>只是记录一下在项目里遇到的坑，这次的几个坑都是因为<a href="https://github.com/JoeWoo/nlpir_x64">nlpir</a>造成的。</p>
+<p>项目里用到LDAP，其中有这么一段:</p>
+<pre class="sourceCode ruby"><code class="sourceCode ruby">filter = <span class="dt">Net</span>::<span class="dt">LDAP</span>::<span class="dt">Filter</span>.eq(<span class="st">&quot;sAMAccountName&quot;</span>， user_name)
+info = ldap.search(base: <span class="st">&quot;dc=test， dc=cn&quot;</span>， filter: filter)</code></pre>
+<p>在命令行里单独测试运行正常，但是放在Rails的一个控制器里调用，就会在<code>ldap.search</code>那行出现这个错误：</p>
+<pre><code>ArgumentError (wrong number of arguments (0 for 1..2)):
+  app/controllers/ldap_controller.rb:17:in `ldap_auth'
+  ...</code></pre>
+<p>Stacktrace更是诡异，都到<code>fiddle</code>去了：</p>
+<pre><code>/home/mga/.rvm/rubies/ruby-2.1.2/lib/ruby/2.1.0/fiddle/import.rb:236:in `create_value'
+net-ldap (0.7.0) lib/net/ldap.rb:1536:in `block (2 levels) in search'
+net-ldap (0.7.0) lib/net/ldap.rb:1532:in `each'
+net-ldap (0.7.0) lib/net/ldap.rb:1532:in `block in search'
+net-ldap (0.7.0) lib/net/ldap.rb:1447:in `loop'
+net-ldap (0.7.0) lib/net/ldap.rb:1447:in `search'
+net-ldap (0.7.0) lib/net/ldap.rb:654:in `search'
+...</code></pre>
+<p>压力山大啊，然后我尝试捕获异常，发现到<code>ldap.search</code>能拿到结果，只是最后返回值的时候才出异常，于是有了这个解决方法：</p>
+<pre class="sourceCode ruby"><code class="sourceCode ruby">filter = <span class="dt">Net</span>::<span class="dt">LDAP</span>::<span class="dt">Filter</span>.eq(<span class="st">&quot;sAMAccountName&quot;</span>， user_name)
+info = <span class="dv">nil</span>
+<span class="kw">begin</span>
+  ldap.search(base: <span class="st">&quot;dc=pv， dc=do&quot;</span>， filter: filter， return_result: <span class="dv">false</span>) <span class="kw">do</span> |entry|
+    info = entry
+    <span class="kw">break</span>
+  <span class="kw">end</span>
+<span class="kw">rescue</span>
+<span class="kw">end</span></code></pre>
+<p>折腾我了一个下午。</p>
+<p>后来用<code>[1..-1]</code>来取ActiveRecord结果集中第二到最后的元素，居然出现StackOverlow，再试发现只要取下标都会出错，感觉不妙，一定是某个库导入了奇怪的东西。然后一个一个gem关掉，才定位到nlpir， 打开其中主要的一个文件， 开头是这样的：</p>
+<pre class="sourceCode ruby"><code class="sourceCode ruby"><span class="co"># coding: utf-8</span>
+...
+<span class="kw">include</span> <span class="dt">Fiddle</span>::<span class="dt">CParser</span>
+<span class="kw">include</span> <span class="dt">Fiddle</span>::<span class="dt">Importer</span>
+
+<span class="kw">module</span> <span class="dt">Nlpir</span>
+  ...
+<span class="kw">end</span></code></pre>
+<p>直接在顶层<code>include Fiddle::Importer</code>， Fiddle::Importer刚好又<a href="http://ruby-doc.org/stdlib-2.0.0/libdoc/fiddle/rdoc/Fiddle/Importer.html#method-i-5B-5D">定义了<code>[]</code></a>……</p>
+  </section>
+
+  <section id="comment">
+    <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+  </section>
+
+</article>
+
+<script type="text/javascript" src="../js/post.js"></script>
+
+
+    </div>
+    <footer id="footer">
+      @mgampkay
+    </footer>
+
+    <script type="text/javascript" src="../js/ga.js"></script>
+
+  </body>
+</html>
