@@ -46,11 +46,11 @@
 <h1 id="惰性求值">惰性求值</h1>
 <p>Clean程序会从<code>Start :: *World -&gt; *World</code>函数开始执行，运行时系统会向<code>Start</code>传进一个唯一的<code>World</code>（实际上只是个数字），从这个唯一的<code>World</code>我们可以生成新的<code>World</code>或其他唯一值，通过这些唯一值就能执行IO和控制程序执行的顺序，甚至可以原地修改数据，对性能优化也有帮助。</p>
 <p>Clean的执行是基于图规约的惰性求值，整个程序就是一个图，这个图就是维一值传递的网络，开始于<code>*World</code>结束于<code>*World</code>，只有对最后的<code>*World</code>的求值有意义的路径才会被执行，其他都被忽略。例如下面的程序</p>
-<pre class="clean"><code>Start world0 = world2
+<pre class="clean"><code>Start world0 = world1
   where
     (_, file0, world1) = fopen &quot;file&quot; FReadText world0
     (_, char,  file1)  = freadc file0
-    (_, world3)        = fclose file1 world1
+    (_, world2)        = fclose file1 world1
 
 // fopen  :: !{#Char} !Int !*f -&gt; (!Bool,!*File,!*f)
 // freadc :: !*File -&gt; (!Bool,!Char,!*File)
